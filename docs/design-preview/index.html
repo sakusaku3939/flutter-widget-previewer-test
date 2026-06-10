@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Widget Previewer Lab Design Preview</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="preview-shell" data-preview-shell>
+    <section class="preview-stage" aria-label="App preview">
+      <div class="device-frame" data-viewport="mobile">
+        <div id="app-capture" class="app-capture">
+          <header class="app-header">
+            <div>
+              <p class="eyebrow">FLUTTER PREVIEWER</p>
+              <h1>Widget Previewer Lab</h1>
+              <p class="header-copy">Previewer と Android エミュレーターで同じ Widget を検証する最小テストアプリ。</p>
+            </div>
+            <span class="version-pill">Flutter 3.38+</span>
+          </header>
+
+          <section class="summary-strip" aria-label="Preview summary">
+            <article>
+              <span class="summary-label">Preview groups</span>
+              <strong>4</strong>
+            </article>
+            <article>
+              <span class="summary-label">States</span>
+              <strong>4</strong>
+            </article>
+            <article>
+              <span class="summary-label">Targets</span>
+              <strong>2</strong>
+            </article>
+          </section>
+
+          <section class="content-section" aria-labelledby="state-heading">
+            <div class="section-heading">
+              <div>
+                <p class="section-kicker">Status samples</p>
+                <h2 id="state-heading">状態別カード</h2>
+              </div>
+              <span class="shared-widget-label">Shared Widget</span>
+            </div>
+
+            <div class="status-grid">
+              <article class="status-card status-loading">
+                <span class="status-marker" aria-hidden="true"></span>
+                <div>
+                  <h3>Loading</h3>
+                  <p>Previewer で skeleton / progress 表示を確認する状態。</p>
+                </div>
+              </article>
+              <article class="status-card status-empty">
+                <span class="status-marker" aria-hidden="true"></span>
+                <div>
+                  <h3>Empty</h3>
+                  <p>データがない場合の余白、説明文、誘導の見え方を確認。</p>
+                </div>
+              </article>
+              <article class="status-card status-error">
+                <span class="status-marker" aria-hidden="true"></span>
+                <div>
+                  <h3>Error</h3>
+                  <p>エラー色だけに頼らず、テキストで原因を伝える状態。</p>
+                </div>
+              </article>
+              <article class="status-card status-success">
+                <span class="status-marker" aria-hidden="true"></span>
+                <div>
+                  <h3>Success</h3>
+                  <p>正常表示時の情報密度とカード階層を確認する状態。</p>
+                </div>
+              </article>
+            </div>
+          </section>
+
+          <section class="content-section adaptive-section" aria-labelledby="layout-heading">
+            <div>
+              <p class="section-kicker">Adaptive layout</p>
+              <h2 id="layout-heading">スマホ幅 / タブレット幅確認</h2>
+              <p>同じ Widget を Previewer の size 指定とエミュレーター実行の両方で検証します。</p>
+            </div>
+            <div class="check-list" aria-label="Verification checklist">
+              <span>flutter widget-preview start</span>
+              <span>flutter analyze</span>
+              <span>flutter test</span>
+              <span>flutter run -d emulator</span>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <aside class="control-panel" aria-label="Design controls">
+      <div class="panel-header">
+        <div>
+          <p>DESIGN TOKENS</p>
+          <h2>Preview Editor</h2>
+        </div>
+        <button class="ghost-button" type="button" data-reset>Reset</button>
+      </div>
+
+      <div class="control-group">
+        <h3>Viewport</h3>
+        <div class="segmented-control" role="group" aria-label="Preview viewport">
+          <button type="button" data-viewport-button="mobile" aria-pressed="true">Mobile</button>
+          <button type="button" data-viewport-button="tablet">Tablet</button>
+          <button type="button" data-viewport-button="desktop">Desktop</button>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <h3>Colors</h3>
+        <label class="field-row">
+          <span>Primary</span>
+          <input type="color" data-token="color.primary" value="#2563eb">
+        </label>
+        <label class="field-row">
+          <span>Background</span>
+          <input type="color" data-token="color.background" value="#f8fafc">
+        </label>
+        <label class="field-row">
+          <span>Surface</span>
+          <input type="color" data-token="color.surface" value="#ffffff">
+        </label>
+        <label class="field-row">
+          <span>Text</span>
+          <input type="color" data-token="color.text" value="#111827">
+        </label>
+        <label class="field-row">
+          <span>Success</span>
+          <input type="color" data-token="color.success" value="#15803d">
+        </label>
+        <label class="field-row">
+          <span>Error</span>
+          <input type="color" data-token="color.error" value="#b91c1c">
+        </label>
+      </div>
+
+      <div class="control-group">
+        <h3>Type & Space</h3>
+        <label class="range-row">
+          <span>Base font</span>
+          <input type="range" min="14" max="20" value="16" data-token="typography.baseFontSize" data-unit="px">
+          <output>16px</output>
+        </label>
+        <label class="range-row">
+          <span>Heading scale</span>
+          <input type="range" min="1.1" max="1.55" step="0.05" value="1.25" data-token="typography.headingScale">
+          <output>1.25</output>
+        </label>
+        <label class="range-row">
+          <span>Spacing</span>
+          <input type="range" min="8" max="28" value="16" data-token="spacing.base" data-unit="px">
+          <output>16px</output>
+        </label>
+      </div>
+
+      <div class="control-group">
+        <h3>Components</h3>
+        <label class="range-row">
+          <span>Card radius</span>
+          <input type="range" min="0" max="24" value="12" data-token="radius.card" data-unit="px">
+          <output>12px</output>
+        </label>
+        <label class="range-row">
+          <span>Button radius</span>
+          <input type="range" min="0" max="24" value="10" data-token="component.buttonRadius" data-unit="px">
+          <output>10px</output>
+        </label>
+        <label class="range-row">
+          <span>Card padding</span>
+          <input type="range" min="12" max="28" value="16" data-token="component.cardPadding" data-unit="px">
+          <output>16px</output>
+        </label>
+        <label class="range-row">
+          <span>Heading weight</span>
+          <input type="range" min="500" max="800" step="100" value="700" data-token="component.headingWeight">
+          <output>700</output>
+        </label>
+        <label class="range-row">
+          <span>Shadow</span>
+          <input type="range" min="0" max="32" value="14" data-token="shadow.elevation" data-unit="px">
+          <output>14px</output>
+        </label>
+      </div>
+
+      <div class="control-group">
+        <div class="tokens-header">
+          <h3>design-tokens</h3>
+          <button class="ghost-button" type="button" data-copy>Copy</button>
+        </div>
+        <pre class="tokens-output" data-token-output aria-live="polite"></pre>
+      </div>
+    </aside>
+  </main>
+
+  <script src="./editor.js"></script>
+</body>
+</html>
