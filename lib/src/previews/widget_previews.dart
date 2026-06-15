@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widget_previews.dart';
 
-import '../ui_catalog/preview_surface.dart';
-import '../ui_catalog/widget_scenarios.dart';
+import 'foundation/preview_surface.dart';
+import 'preview_scenarios.dart';
 
 @Preview(
   group: 'Status',
@@ -11,7 +11,7 @@ import '../ui_catalog/widget_scenarios.dart';
   brightness: Brightness.light,
 )
 Widget successStatusCardPreview() {
-  return PreviewSurface(scenario: widgetScenarioById('status_success_card'));
+  return PreviewSurface(scenario: previewScenarioById('status_success_card'));
 }
 
 @Preview(
@@ -21,7 +21,7 @@ Widget successStatusCardPreview() {
   brightness: Brightness.light,
 )
 Widget errorStatusCardPreview() {
-  return PreviewSurface(scenario: widgetScenarioById('status_error_card'));
+  return PreviewSurface(scenario: previewScenarioById('status_error_card'));
 }
 
 @Preview(
@@ -31,7 +31,9 @@ Widget errorStatusCardPreview() {
   brightness: Brightness.dark,
 )
 Widget darkStatusCardPreview() {
-  return PreviewSurface(scenario: widgetScenarioById('theme_status_card_dark'));
+  return PreviewSurface(
+    scenario: previewScenarioById('theme_status_card_dark'),
+  );
 }
 
 @Preview(
@@ -41,7 +43,7 @@ Widget darkStatusCardPreview() {
   brightness: Brightness.light,
 )
 Widget mobileLayoutPreview() {
-  return PreviewSurface(scenario: widgetScenarioById('layout_mobile'));
+  return PreviewSurface(scenario: previewScenarioById('layout_mobile'));
 }
 
 @Preview(
@@ -51,7 +53,7 @@ Widget mobileLayoutPreview() {
   brightness: Brightness.light,
 )
 Widget tabletLayoutPreview() {
-  return PreviewSurface(scenario: widgetScenarioById('layout_tablet'));
+  return PreviewSurface(scenario: previewScenarioById('layout_tablet'));
 }
 
 @Preview(
@@ -61,5 +63,7 @@ Widget tabletLayoutPreview() {
   brightness: Brightness.light,
 )
 Widget japaneseLabelsPreview() {
-  return PreviewSurface(scenario: widgetScenarioById('locale_japanese_labels'));
+  return PreviewSurface(
+    scenario: previewScenarioById('locale_japanese_labels'),
+  );
 }

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_theme.dart';
-import 'ui_scenario.dart';
+import '../../theme/app_theme.dart';
+import 'preview_scenario.dart';
 
 class PreviewSurface extends StatelessWidget {
   const PreviewSurface({required this.scenario, super.key});
 
-  final UiScenario scenario;
+  final PreviewScenario scenario;
 
   @override
   Widget build(BuildContext context) {

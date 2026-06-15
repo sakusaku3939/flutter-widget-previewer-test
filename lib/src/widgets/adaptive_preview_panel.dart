@@ -89,10 +89,7 @@ class _VerificationStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const commands = [
-      'hogehoge',
-      'fugafuga',
-    ];
+    const commands = ['hogehoge', 'fugafuga'];
 
     return Wrap(
       spacing: 8,

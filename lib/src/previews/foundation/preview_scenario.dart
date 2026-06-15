@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-class UiScenario {
-  const UiScenario({
+class PreviewScenario {
+  const PreviewScenario({
     required this.id,
     required this.group,
     required this.name,
