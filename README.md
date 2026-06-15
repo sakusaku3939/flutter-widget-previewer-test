@@ -35,6 +35,25 @@ fvm flutter widget-preview start
 - `Layout`: mobile / tablet
 - `Locale`: Japanese labels
 
+表示する状態は `lib/src/ui_catalog/widget_scenarios.dart` に集約しています。
+Widget Previewer と Golden Test は同じシナリオ定義を参照します。
+
+## Golden Test
+
+Alchemist で UI シナリオの Golden Test を実行します。
+
+```bash
+fvm flutter test test/goldens/ui_catalog_golden_test.dart
+```
+
+基準画像を更新する場合は次を実行します。
+
+```bash
+fvm flutter test test/goldens/ui_catalog_golden_test.dart --update-goldens
+```
+
+OS別のローカル golden は無効化し、`goldens/ci` のみを検証します。
+
 ## Android エミュレーター確認
 
 利用可能なエミュレーターを確認します。

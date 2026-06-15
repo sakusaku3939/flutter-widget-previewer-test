@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widget_previews.dart';
 
-import '../models/preview_status.dart';
-import '../theme/app_theme.dart';
-import '../widgets/adaptive_preview_panel.dart';
-import '../widgets/status_card.dart';
+import '../ui_catalog/preview_surface.dart';
+import '../ui_catalog/widget_scenarios.dart';
 
 @Preview(
   group: 'Status',
@@ -13,7 +11,7 @@ import '../widgets/status_card.dart';
   brightness: Brightness.light,
 )
 Widget successStatusCardPreview() {
-  return const PreviewHost(child: StatusCard(status: PreviewStatus.success));
+  return PreviewSurface(scenario: widgetScenarioById('status_success_card'));
 }
 
 @Preview(
@@ -23,7 +21,7 @@ Widget successStatusCardPreview() {
   brightness: Brightness.light,
 )
 Widget errorStatusCardPreview() {
-  return const PreviewHost(child: StatusCard(status: PreviewStatus.error));
+  return PreviewSurface(scenario: widgetScenarioById('status_error_card'));
 }
 
 @Preview(
@@ -33,10 +31,7 @@ Widget errorStatusCardPreview() {
   brightness: Brightness.dark,
 )
 Widget darkStatusCardPreview() {
-  return const PreviewHost(
-    brightness: Brightness.dark,
-    child: StatusCard(status: PreviewStatus.loading),
-  );
+  return PreviewSurface(scenario: widgetScenarioById('theme_status_card_dark'));
 }
 
 @Preview(
@@ -46,7 +41,7 @@ Widget darkStatusCardPreview() {
   brightness: Brightness.light,
 )
 Widget mobileLayoutPreview() {
-  return const PreviewHost(child: AdaptivePreviewPanel());
+  return PreviewSurface(scenario: widgetScenarioById('layout_mobile'));
 }
 
 @Preview(
@@ -56,7 +51,7 @@ Widget mobileLayoutPreview() {
   brightness: Brightness.light,
 )
 Widget tabletLayoutPreview() {
-  return const PreviewHost(child: AdaptivePreviewPanel());
+  return PreviewSurface(scenario: widgetScenarioById('layout_tablet'));
 }
 
 @Preview(
@@ -66,45 +61,5 @@ Widget tabletLayoutPreview() {
   brightness: Brightness.light,
 )
 Widget japaneseLabelsPreview() {
-  return const PreviewHost(
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        StatusCard(status: PreviewStatus.empty),
-        SizedBox(height: AppTokens.spacing),
-        StatusCard(status: PreviewStatus.success),
-      ],
-    ),
-  );
-}
-
-class PreviewHost extends StatelessWidget {
-  const PreviewHost({
-    required this.child,
-    this.brightness = Brightness.light,
-    super.key,
-  });
-
-  final Widget child;
-  final Brightness brightness;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = brightness == Brightness.dark
-        ? AppTheme.dark()
-        : AppTheme.light();
-
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: theme,
-      home: Scaffold(
-        body: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(AppTokens.spacing),
-            child: child,
-          ),
-        ),
-      ),
-    );
-  }
+  return PreviewSurface(scenario: widgetScenarioById('locale_japanese_labels'));
 }

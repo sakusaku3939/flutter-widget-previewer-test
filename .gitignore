@@ -44,5 +44,10 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+# Alchemist local golden outputs
+test/**/goldens/goldens/**/*.*
+test/**/goldens/failures/**/*.*
+!test/**/goldens/goldens/ci/*.*
+
 # FVM Version Cache
 .fvm/

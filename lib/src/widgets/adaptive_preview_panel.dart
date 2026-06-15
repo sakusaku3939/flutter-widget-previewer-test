@@ -90,10 +90,8 @@ class _VerificationStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const commands = [
-      'flutter widget-preview start',
-      'flutter analyze',
-      'flutter test',
-      'flutter run -d emulator',
+      'hogehoge',
+      'fugafuga',
     ];
 
     return Wrap(
