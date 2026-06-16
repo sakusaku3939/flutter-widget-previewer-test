@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'screens/preview_gallery_screen.dart';
-import 'theme/app_theme.dart';
+import 'presentation/screens/preview_gallery/preview_gallery_screen.dart';
+import 'presentation/theme/app_theme.dart';
 
 class WidgetPreviewerLabApp extends StatelessWidget {
   const WidgetPreviewerLabApp({super.key});

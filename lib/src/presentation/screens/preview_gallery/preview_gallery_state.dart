@@ -1,6 +1,16 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_theme.dart';
+import '../../../core/design/app_tokens.dart';
+
+class PreviewGalleryState {
+  const PreviewGalleryState({
+    this.statuses = PreviewStatus.values,
+    this.commands = const ['hogehoge', 'fugafuga'],
+  });
+
+  final List<PreviewStatus> statuses;
+  final List<String> commands;
+}
 
 enum PreviewStatus {
   loading(

@@ -21,6 +21,24 @@ fvm flutter pub get
 
 FVM を使わない場合は、PATH 上の Flutter が `3.35+` であることを確認してから `flutter` コマンドに置き換えてください。
 
+## 構成
+
+UI 層は `lib/src/presentation` 配下に置きます。
+
+```text
+presentation/
+├── screens/
+│   └── preview_gallery/
+│       ├── preview_gallery_screen.dart
+│       ├── preview_gallery_notifier.dart
+│       └── preview_gallery_state.dart
+├── widgets/
+├── providers/
+│   └── queries/
+├── theme/
+└── previews/
+```
+
 ## Widget Previewer
 
 Previewer を起動します。
@@ -29,15 +47,15 @@ Previewer を起動します。
 fvm flutter widget-preview start
 ```
 
-Previewer には `lib/src/previews/cases/preview_gallery_preview_cases.dart` の個別 `@Preview` が表示されます。
+Previewer には `lib/src/presentation/previews/cases/preview_gallery_preview_cases.dart` の個別 `@Preview` が表示されます。
 
 - `PreviewGallery`: mobile / tablet
 
-表示する状態と `@Preview` adapter は画面ごとに `lib/src/previews/cases/` 配下へ置きます。普段の UI 開発では画面単位の PreviewCase と `@Preview` を追加します。部品単位の `@Preview` は作らず、Previewer の group も画面単位で分けます。
+表示する状態と `@Preview` adapter は画面ごとに `lib/src/presentation/previews/cases/` 配下へ置きます。普段の UI 開発では画面単位の PreviewCase と `@Preview` を追加します。部品単位の `@Preview` は作らず、Previewer の group も画面単位で分けます。
 
 ## Golden Test
 
-Alchemist でレイアウト確認用の PreviewCase を Golden Test します。対象は `lib/src/previews/preview_cases.dart` の `goldenPreviewCases` に集約しています。
+Alchemist でレイアウト確認用の PreviewCase を Golden Test します。対象は `lib/src/presentation/previews/preview_cases.dart` の `goldenPreviewCases` に集約しています。
 
 ```bash
 fvm flutter test test/goldens/preview_cases_golden_test.dart
@@ -86,7 +104,7 @@ fvm flutter test
 
 ## デザイントークン
 
-ユーザー指定の design-tokens を `lib/src/theme/app_theme.dart` に反映しています。
+ユーザー指定の design-tokens は `lib/src/core/design/app_tokens.dart` に置き、Flutter の `ThemeData` は `lib/src/presentation/theme/app_theme.dart` に置いています。
 
 - primary: `#000000`
 - background: `#F8FAFC`

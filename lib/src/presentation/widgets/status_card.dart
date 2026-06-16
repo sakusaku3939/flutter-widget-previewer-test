@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../models/preview_status.dart';
-import '../theme/app_theme.dart';
+import '../../core/design/app_tokens.dart';
+import '../screens/preview_gallery/preview_gallery_state.dart';
 
 class StatusCard extends StatelessWidget {
   const StatusCard({required this.status, this.compact = false, super.key});

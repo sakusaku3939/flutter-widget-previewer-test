@@ -1,18 +1,23 @@
 import 'package:flutter/material.dart';
 
-import '../models/preview_status.dart';
-import '../theme/app_theme.dart';
+import '../../core/design/app_tokens.dart';
+import '../screens/preview_gallery/preview_gallery_state.dart';
 import 'status_card.dart';
 
 class AdaptivePreviewPanel extends StatelessWidget {
-  const AdaptivePreviewPanel({super.key});
+  const AdaptivePreviewPanel({
+    this.state = const PreviewGalleryState(),
+    super.key,
+  });
+
+  final PreviewGalleryState state;
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final isWide = constraints.maxWidth >= 640;
-        final cards = PreviewStatus.values
+        final cards = state.statuses
             .map((status) => StatusCard(status: status, compact: !isWide))
             .toList();
 
@@ -34,7 +39,7 @@ class AdaptivePreviewPanel extends StatelessWidget {
             else
               Column(spacing: 12, children: cards),
             const SizedBox(height: AppTokens.spacing),
-            const _VerificationStrip(),
+            _VerificationStrip(commands: state.commands),
           ],
         );
       },
@@ -85,12 +90,12 @@ class _SectionHeader extends StatelessWidget {
 }
 
 class _VerificationStrip extends StatelessWidget {
-  const _VerificationStrip();
+  const _VerificationStrip({required this.commands});
+
+  final List<String> commands;
 
   @override
   Widget build(BuildContext context) {
-    const commands = ['hogehoge', 'fugafuga'];
-
     return Wrap(
       spacing: 8,
       runSpacing: 8,
