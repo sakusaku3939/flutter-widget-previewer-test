@@ -13,13 +13,15 @@ const previewGalleryTabletSize = Size(760, 640);
 const previewGalleryMobileName = 'Mobile layout';
 const previewGalleryTabletName = 'Tablet layout';
 
-final _previewGalleryMobilePreviewCase = PreviewCase(
-  goldenFileName: 'preview_gallery_mobile',
-  group: previewGalleryGroup,
-  name: previewGalleryMobileName,
-  size: previewGalleryMobileSize,
-  builder: (_) => const AdaptivePreviewPanel(),
-);
+PreviewCase get _previewGalleryMobilePreviewCase {
+  return PreviewCase(
+    goldenFileName: 'preview_gallery_mobile',
+    group: previewGalleryGroup,
+    name: previewGalleryMobileName,
+    size: previewGalleryMobileSize,
+    builder: (_) => const AdaptivePreviewPanel(),
+  );
+}
 
 @Preview(
   group: previewGalleryGroup,
@@ -31,13 +33,15 @@ Widget previewGalleryMobilePreview() {
   return PreviewSurface(previewCase: _previewGalleryMobilePreviewCase);
 }
 
-final _previewGalleryTabletPreviewCase = PreviewCase(
-  goldenFileName: 'preview_gallery_tablet',
-  group: previewGalleryGroup,
-  name: previewGalleryTabletName,
-  size: previewGalleryTabletSize,
-  builder: (_) => const AdaptivePreviewPanel(),
-);
+PreviewCase get _previewGalleryTabletPreviewCase {
+  return PreviewCase(
+    goldenFileName: 'preview_gallery_tablet',
+    group: previewGalleryGroup,
+    name: previewGalleryTabletName,
+    size: previewGalleryTabletSize,
+    builder: (_) => const AdaptivePreviewPanel(),
+  );
+}
 
 @Preview(
   group: previewGalleryGroup,
@@ -49,7 +53,6 @@ Widget previewGalleryTabletPreview() {
   return PreviewSurface(previewCase: _previewGalleryTabletPreviewCase);
 }
 
-final previewGalleryPreviewCases = <PreviewCase>[
-  _previewGalleryMobilePreviewCase,
-  _previewGalleryTabletPreviewCase,
-];
+List<PreviewCase> get previewGalleryPreviewCases {
+  return [_previewGalleryMobilePreviewCase, _previewGalleryTabletPreviewCase];
+}

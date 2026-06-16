@@ -13,13 +13,15 @@ const homeTabletSize = Size(760, 640);
 const homeMobileName = 'Mobile layout';
 const homeTabletName = 'Tablet layout';
 
-final _homeMobilePreviewCase = PreviewCase(
-  goldenFileName: 'home_mobile',
-  group: homeGroup,
-  name: homeMobileName,
-  size: homeMobileSize,
-  builder: (_) => const HomeContent(),
-);
+PreviewCase get _homeMobilePreviewCase {
+  return PreviewCase(
+    goldenFileName: 'home_mobile',
+    group: homeGroup,
+    name: homeMobileName,
+    size: homeMobileSize,
+    builder: (_) => const HomeContent(),
+  );
+}
 
 @Preview(
   group: homeGroup,
@@ -31,13 +33,15 @@ Widget homeMobilePreview() {
   return PreviewSurface(previewCase: _homeMobilePreviewCase);
 }
 
-final _homeTabletPreviewCase = PreviewCase(
-  goldenFileName: 'home_tablet',
-  group: homeGroup,
-  name: homeTabletName,
-  size: homeTabletSize,
-  builder: (_) => const HomeContent(),
-);
+PreviewCase get _homeTabletPreviewCase {
+  return PreviewCase(
+    goldenFileName: 'home_tablet',
+    group: homeGroup,
+    name: homeTabletName,
+    size: homeTabletSize,
+    builder: (_) => const HomeContent(),
+  );
+}
 
 @Preview(
   group: homeGroup,
@@ -49,7 +53,6 @@ Widget homeTabletPreview() {
   return PreviewSurface(previewCase: _homeTabletPreviewCase);
 }
 
-final homePreviewCases = <PreviewCase>[
-  _homeMobilePreviewCase,
-  _homeTabletPreviewCase,
-];
+List<PreviewCase> get homePreviewCases {
+  return [_homeMobilePreviewCase, _homeTabletPreviewCase];
+}

@@ -19,13 +19,15 @@ const resultSummaryInProgressMobileName = 'In progress mobile';
 const resultSummaryCompletedMobileName = 'Completed mobile';
 const resultSummaryAttentionMobileName = 'Attention mobile';
 
-final _resultSummaryInteractiveMobilePreviewCase = PreviewCase(
-  goldenFileName: 'result_summary_interactive_mobile',
-  group: resultSummaryGroup,
-  name: resultSummaryInteractiveMobileName,
-  size: resultSummaryMobileSize,
-  builder: (_) => const ResultSummaryPreviewContent(),
-);
+PreviewCase get _resultSummaryInteractiveMobilePreviewCase {
+  return PreviewCase(
+    goldenFileName: 'result_summary_interactive_mobile',
+    group: resultSummaryGroup,
+    name: resultSummaryInteractiveMobileName,
+    size: resultSummaryMobileSize,
+    builder: (_) => const ResultSummaryPreviewContent(),
+  );
+}
 
 @Preview(
   group: resultSummaryGroup,
@@ -39,13 +41,15 @@ Widget resultSummaryInteractiveMobilePreview() {
   );
 }
 
-final _resultSummaryInteractiveTabletPreviewCase = PreviewCase(
-  goldenFileName: 'result_summary_interactive_tablet',
-  group: resultSummaryGroup,
-  name: resultSummaryInteractiveTabletName,
-  size: resultSummaryTabletSize,
-  builder: (_) => const ResultSummaryPreviewContent(),
-);
+PreviewCase get _resultSummaryInteractiveTabletPreviewCase {
+  return PreviewCase(
+    goldenFileName: 'result_summary_interactive_tablet',
+    group: resultSummaryGroup,
+    name: resultSummaryInteractiveTabletName,
+    size: resultSummaryTabletSize,
+    builder: (_) => const ResultSummaryPreviewContent(),
+  );
+}
 
 @Preview(
   group: resultSummaryGroup,
@@ -59,13 +63,14 @@ Widget resultSummaryInteractiveTabletPreview() {
   );
 }
 
-final _resultSummaryInProgressMobilePreviewCase =
-    _resultSummaryPreviewCaseForStatus(
-      status: ResultSummaryStatus.inProgress,
-      goldenFileName: 'result_summary_in_progress_mobile',
-      name: resultSummaryInProgressMobileName,
-      size: resultSummaryMobileSize,
-    );
+PreviewCase get _resultSummaryInProgressMobilePreviewCase {
+  return _resultSummaryPreviewCaseForStatus(
+    status: ResultSummaryStatus.inProgress,
+    goldenFileName: 'result_summary_in_progress_mobile',
+    name: resultSummaryInProgressMobileName,
+    size: resultSummaryMobileSize,
+  );
+}
 
 @Preview(
   group: resultSummaryGroup,
@@ -77,13 +82,14 @@ Widget resultSummaryInProgressMobilePreview() {
   return PreviewSurface(previewCase: _resultSummaryInProgressMobilePreviewCase);
 }
 
-final _resultSummaryCompletedMobilePreviewCase =
-    _resultSummaryPreviewCaseForStatus(
-      status: ResultSummaryStatus.completed,
-      goldenFileName: 'result_summary_completed_mobile',
-      name: resultSummaryCompletedMobileName,
-      size: resultSummaryMobileSize,
-    );
+PreviewCase get _resultSummaryCompletedMobilePreviewCase {
+  return _resultSummaryPreviewCaseForStatus(
+    status: ResultSummaryStatus.completed,
+    goldenFileName: 'result_summary_completed_mobile',
+    name: resultSummaryCompletedMobileName,
+    size: resultSummaryMobileSize,
+  );
+}
 
 @Preview(
   group: resultSummaryGroup,
@@ -95,13 +101,14 @@ Widget resultSummaryCompletedMobilePreview() {
   return PreviewSurface(previewCase: _resultSummaryCompletedMobilePreviewCase);
 }
 
-final _resultSummaryAttentionMobilePreviewCase =
-    _resultSummaryPreviewCaseForStatus(
-      status: ResultSummaryStatus.attention,
-      goldenFileName: 'result_summary_attention_mobile',
-      name: resultSummaryAttentionMobileName,
-      size: resultSummaryMobileSize,
-    );
+PreviewCase get _resultSummaryAttentionMobilePreviewCase {
+  return _resultSummaryPreviewCaseForStatus(
+    status: ResultSummaryStatus.attention,
+    goldenFileName: 'result_summary_attention_mobile',
+    name: resultSummaryAttentionMobileName,
+    size: resultSummaryMobileSize,
+  );
+}
 
 @Preview(
   group: resultSummaryGroup,
@@ -113,11 +120,13 @@ Widget resultSummaryAttentionMobilePreview() {
   return PreviewSurface(previewCase: _resultSummaryAttentionMobilePreviewCase);
 }
 
-final resultSummaryPreviewCases = <PreviewCase>[
-  _resultSummaryInProgressMobilePreviewCase,
-  _resultSummaryCompletedMobilePreviewCase,
-  _resultSummaryAttentionMobilePreviewCase,
-];
+List<PreviewCase> get resultSummaryPreviewCases {
+  return [
+    _resultSummaryInProgressMobilePreviewCase,
+    _resultSummaryCompletedMobilePreviewCase,
+    _resultSummaryAttentionMobilePreviewCase,
+  ];
+}
 
 PreviewCase _resultSummaryPreviewCaseForStatus({
   required ResultSummaryStatus status,
