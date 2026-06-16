@@ -8,7 +8,7 @@ void main() {
   group('preview goldens', () {
     for (final preview in goldenPreviews) {
       goldenTest(
-        preview.name,
+        '${preview.group} ${preview.name}',
         fileName: 'preview_${preview.goldenFileName}',
         constraints: BoxConstraints.tight(preview.size),
         pumpBeforeTest: pumpOnce,

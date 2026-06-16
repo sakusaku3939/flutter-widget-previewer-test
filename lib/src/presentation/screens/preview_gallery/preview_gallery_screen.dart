@@ -7,6 +7,8 @@ import 'preview_gallery_notifier.dart';
 class PreviewGalleryScreen extends StatefulWidget {
   const PreviewGalleryScreen({super.key});
 
+  static const routeName = '/preview-gallery';
+
   @override
   State<PreviewGalleryScreen> createState() => _PreviewGalleryScreenState();
 }
