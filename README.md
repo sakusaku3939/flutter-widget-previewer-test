@@ -56,7 +56,7 @@ Previewer には `lib/src/presentation/screens/preview_gallery/preview_gallery_p
 
 ## Golden Test
 
-Alchemist でレイアウト確認用の PreviewCase を Golden Test します。対象は `lib/src/presentation/previews/previews.dart` の `goldenPreviews` に集約しています。
+Alchemist でレイアウト確認用の PreviewCase を Golden Test します。対象は `lib/src/presentation/previews/golden_previews.dart` の `goldenPreviews` に集約しています。
 
 ```bash
 fvm flutter test test/goldens/previews_golden_test.dart
