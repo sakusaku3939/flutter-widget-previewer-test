@@ -29,27 +29,24 @@ Previewer を起動します。
 fvm flutter widget-preview start
 ```
 
-プレビュー定義は `lib/src/previews/widget_previews.dart` にあります。
+Previewer には `lib/src/previews/cases/preview_gallery_preview_cases.dart` の個別 `@Preview` が表示されます。
 
-- `Status`: success / error / dark loading
-- `Layout`: mobile / tablet
-- `Locale`: Japanese labels
+- `PreviewGallery`: mobile / tablet
 
-表示する状態は `lib/src/previews/scenarios/widget_preview_scenarios.dart` に集約しています。
-Widget Previewer と Golden Test は同じシナリオ定義を参照します。
+表示する状態と `@Preview` adapter は画面ごとに `lib/src/previews/cases/` 配下へ置きます。普段の UI 開発では画面単位の PreviewCase と `@Preview` を追加します。部品単位の `@Preview` は作らず、Previewer の group も画面単位で分けます。
 
 ## Golden Test
 
-Alchemist で UI シナリオの Golden Test を実行します。
+Alchemist でレイアウト確認用の PreviewCase を Golden Test します。対象は `lib/src/previews/preview_cases.dart` の `goldenPreviewCases` に集約しています。
 
 ```bash
-fvm flutter test test/goldens/preview_scenarios_golden_test.dart
+fvm flutter test test/goldens/preview_cases_golden_test.dart
 ```
 
 基準画像を更新する場合は次を実行します。
 
 ```bash
-fvm flutter test test/goldens/preview_scenarios_golden_test.dart --update-goldens
+fvm flutter test test/goldens/preview_cases_golden_test.dart --update-goldens
 ```
 
 OS別のローカル golden は無効化し、`goldens/ci` のみを検証します。

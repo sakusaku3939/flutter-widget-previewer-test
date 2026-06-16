@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/app_theme.dart';
-import 'preview_scenario.dart';
+import 'preview_case.dart';
 
 class PreviewSurface extends StatelessWidget {
-  const PreviewSurface({required this.scenario, super.key});
+  const PreviewSurface({required this.previewCase, super.key});
 
-  final PreviewScenario scenario;
+  final PreviewCase previewCase;
 
   @override
   Widget build(BuildContext context) {
-    final theme = scenario.brightness == Brightness.dark
+    final theme = previewCase.brightness == Brightness.dark
         ? AppTheme.dark()
         : AppTheme.light();
 
@@ -21,7 +21,7 @@ class PreviewSurface extends StatelessWidget {
         body: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(AppTokens.spacing),
-            child: Builder(builder: scenario.builder),
+            child: Builder(builder: previewCase.builder),
           ),
         ),
       ),

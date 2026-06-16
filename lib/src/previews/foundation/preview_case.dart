@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-class PreviewScenario {
-  const PreviewScenario({
-    required this.id,
+class PreviewCase {
+  const PreviewCase({
+    required this.goldenFileName,
     required this.group,
     required this.name,
     required this.size,
@@ -10,7 +10,7 @@ class PreviewScenario {
     this.brightness = Brightness.light,
   });
 
-  final String id;
+  final String goldenFileName;
   final String group;
   final String name;
   final Size size;
