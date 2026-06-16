@@ -31,7 +31,8 @@ presentation/
 │   └── preview_gallery/
 │       ├── preview_gallery_screen.dart
 │       ├── preview_gallery_notifier.dart
-│       └── preview_gallery_state.dart
+│       ├── preview_gallery_state.dart
+│       └── preview_gallery_preview.dart
 ├── widgets/
 ├── providers/
 │   └── queries/
@@ -47,24 +48,24 @@ Previewer を起動します。
 fvm flutter widget-preview start
 ```
 
-Previewer には `lib/src/presentation/previews/cases/preview_gallery_preview_cases.dart` の個別 `@Preview` が表示されます。
+Previewer には `lib/src/presentation/screens/preview_gallery/preview_gallery_preview.dart` の個別 `@Preview` が表示されます。
 
 - `PreviewGallery`: mobile / tablet
 
-表示する状態と `@Preview` adapter は画面ごとに `lib/src/presentation/previews/cases/` 配下へ置きます。普段の UI 開発では画面単位の PreviewCase と `@Preview` を追加します。部品単位の `@Preview` は作らず、Previewer の group も画面単位で分けます。
+表示する状態と `@Preview` adapter は各画面の `screens/{feature}/` 配下へ置きます。普段の UI 開発では画面単位の PreviewCase と `@Preview` を追加します。部品単位の `@Preview` は作らず、Previewer の group も画面単位で分けます。
 
 ## Golden Test
 
-Alchemist でレイアウト確認用の PreviewCase を Golden Test します。対象は `lib/src/presentation/previews/preview_cases.dart` の `goldenPreviewCases` に集約しています。
+Alchemist でレイアウト確認用の PreviewCase を Golden Test します。対象は `lib/src/presentation/previews/previews.dart` の `goldenPreviews` に集約しています。
 
 ```bash
-fvm flutter test test/goldens/preview_cases_golden_test.dart
+fvm flutter test test/goldens/previews_golden_test.dart
 ```
 
 基準画像を更新する場合は次を実行します。
 
 ```bash
-fvm flutter test test/goldens/preview_cases_golden_test.dart --update-goldens
+fvm flutter test test/goldens/previews_golden_test.dart --update-goldens
 ```
 
 OS別のローカル golden は無効化し、`goldens/ci` のみを検証します。

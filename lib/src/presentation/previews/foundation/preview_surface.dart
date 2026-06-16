@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/design/app_tokens.dart';
 import '../../theme/app_theme.dart';
-import 'preview_case.dart';
+import 'preview.dart';
 
 class PreviewSurface extends StatelessWidget {
   const PreviewSurface({required this.previewCase, super.key});

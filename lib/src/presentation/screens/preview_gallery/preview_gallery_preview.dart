@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widget_previews.dart';
 
+import '../../previews/foundation/preview.dart';
+import '../../previews/foundation/preview_surface.dart';
 import '../../widgets/adaptive_preview_panel.dart';
-import '../foundation/preview_case.dart';
-import '../foundation/preview_surface.dart';
 
 const previewGalleryGroup = 'PreviewGallery';
 
@@ -13,7 +13,7 @@ const previewGalleryTabletSize = Size(760, 640);
 const previewGalleryMobileName = 'Mobile layout';
 const previewGalleryTabletName = 'Tablet layout';
 
-final previewGalleryMobilePreviewCase = PreviewCase(
+final _previewGalleryMobilePreviewCase = PreviewCase(
   goldenFileName: 'preview_gallery_mobile',
   group: previewGalleryGroup,
   name: previewGalleryMobileName,
@@ -28,10 +28,10 @@ final previewGalleryMobilePreviewCase = PreviewCase(
   brightness: Brightness.light,
 )
 Widget previewGalleryMobilePreview() {
-  return _preview(previewGalleryMobilePreviewCase);
+  return PreviewSurface(previewCase: _previewGalleryMobilePreviewCase);
 }
 
-final previewGalleryTabletPreviewCase = PreviewCase(
+final _previewGalleryTabletPreviewCase = PreviewCase(
   goldenFileName: 'preview_gallery_tablet',
   group: previewGalleryGroup,
   name: previewGalleryTabletName,
@@ -46,14 +46,10 @@ final previewGalleryTabletPreviewCase = PreviewCase(
   brightness: Brightness.light,
 )
 Widget previewGalleryTabletPreview() {
-  return _preview(previewGalleryTabletPreviewCase);
+  return PreviewSurface(previewCase: _previewGalleryTabletPreviewCase);
 }
 
 final previewGalleryPreviewCases = <PreviewCase>[
-  previewGalleryMobilePreviewCase,
-  previewGalleryTabletPreviewCase,
+  _previewGalleryMobilePreviewCase,
+  _previewGalleryTabletPreviewCase,
 ];
-
-Widget _preview(PreviewCase previewCase) {
-  return PreviewSurface(previewCase: previewCase);
-}
