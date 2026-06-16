@@ -1,50 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/design/app_tokens.dart';
 import 'result_summary_notifier.dart';
 import 'result_summary_state.dart';
 
-class ResultSummaryScreen extends StatefulWidget {
+class ResultSummaryScreen extends ConsumerWidget {
   const ResultSummaryScreen({super.key});
 
   static const routeName = '/result-summary';
 
   @override
-  State<ResultSummaryScreen> createState() => _ResultSummaryScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(resultSummaryNotifierProvider);
+    final notifier = ref.read(resultSummaryNotifierProvider.notifier);
 
-class _ResultSummaryScreenState extends State<ResultSummaryScreen> {
-  late final ResultSummaryNotifier _notifier;
-
-  @override
-  void initState() {
-    super.initState();
-    _notifier = ResultSummaryNotifier();
-  }
-
-  @override
-  void dispose() {
-    _notifier.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Result Summary')),
       body: SafeArea(
         child: Scrollbar(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(AppTokens.spacing),
-            child: ListenableBuilder(
-              listenable: _notifier,
-              builder: (context, _) {
-                return ResultSummaryContent(
-                  state: _notifier.state,
-                  onStatusChanged: _notifier.selectStatus,
-                  onPressed: _notifier.moveToNextStatus,
-                );
-              },
+            child: ResultSummaryContent(
+              state: state,
+              onStatusChanged: notifier.selectStatus,
+              onPressed: notifier.moveToNextStatus,
             ),
           ),
         ),

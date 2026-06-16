@@ -37,6 +37,8 @@ Previewer には各 `screens/{feature}/*_preview.dart` の個別 `@Preview` が�
 
 表示する状態と `@Preview` adapter は各画面の `screens/{feature}/` 配下へ置きます。普段の UI 開発では画面単位の PreviewCase と `@Preview` を追加します。部品単位の `@Preview` は作らず、Previewer の group も画面単位で分けます。
 
+状態管理は `flutter_riverpod` の `NotifierProvider` を使い、各画面の `*_notifier.dart` に provider と notifier を置きます。
+
 ## Golden Test
 
 Alchemist でレイアウト確認用の PreviewCase を Golden Test します。対象は `lib/src/presentation/previews/golden_previews.dart` の `goldenPreviews` に集約しています。

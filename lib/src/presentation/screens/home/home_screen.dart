@@ -1,48 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/design/app_tokens.dart';
 import 'home_notifier.dart';
 import 'home_state.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(homeNotifierProvider);
 
-class _HomeScreenState extends State<HomeScreen> {
-  late final HomeNotifier _notifier;
-
-  @override
-  void initState() {
-    super.initState();
-    _notifier = HomeNotifier();
-  }
-
-  @override
-  void dispose() {
-    _notifier.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Widget Previewer Lab')),
       body: SafeArea(
         child: Scrollbar(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(AppTokens.spacing),
-            child: ListenableBuilder(
-              listenable: _notifier,
-              builder: (context, _) {
-                return HomeContent(
-                  state: _notifier.state,
-                  onOpen: (routeName) =>
-                      Navigator.of(context).pushNamed(routeName),
-                );
-              },
+            child: HomeContent(
+              state: state,
+              onOpen: (routeName) => Navigator.of(context).pushNamed(routeName),
             ),
           ),
         ),

@@ -1,21 +1,15 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'result_summary_state.dart';
 
-class ResultSummaryNotifier extends ChangeNotifier {
-  ResultSummaryNotifier([this._state = const ResultSummaryState()]);
+final resultSummaryNotifierProvider =
+    NotifierProvider<ResultSummaryNotifier, ResultSummaryState>(
+      ResultSummaryNotifier.new,
+    );
 
-  ResultSummaryState _state;
-
-  ResultSummaryState get state => _state;
-
-  set state(ResultSummaryState value) {
-    if (identical(_state, value)) {
-      return;
-    }
-    _state = value;
-    notifyListeners();
-  }
+class ResultSummaryNotifier extends Notifier<ResultSummaryState> {
+  @override
+  ResultSummaryState build() => const ResultSummaryState();
 
   void selectStatus(ResultSummaryStatus status) {
     state = state.copyWith(status: status);
