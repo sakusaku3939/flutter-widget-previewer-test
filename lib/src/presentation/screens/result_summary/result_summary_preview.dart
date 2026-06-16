@@ -11,10 +11,8 @@ import 'result_summary_state.dart';
 const resultSummaryGroup = 'ResultSummary';
 
 const resultSummaryMobileSize = Size(390, 760);
-const resultSummaryTabletSize = Size(760, 640);
 
 const resultSummaryInteractiveMobileName = 'Interactive mobile';
-const resultSummaryInteractiveTabletName = 'Interactive tablet';
 const resultSummaryInProgressMobileName = 'In progress mobile';
 const resultSummaryCompletedMobileName = 'Completed mobile';
 const resultSummaryAttentionMobileName = 'Attention mobile';
@@ -38,28 +36,6 @@ PreviewCase get _resultSummaryInteractiveMobilePreviewCase {
 Widget resultSummaryInteractiveMobilePreview() {
   return PreviewSurface(
     previewCase: _resultSummaryInteractiveMobilePreviewCase,
-  );
-}
-
-PreviewCase get _resultSummaryInteractiveTabletPreviewCase {
-  return PreviewCase(
-    goldenFileName: 'result_summary_interactive_tablet',
-    group: resultSummaryGroup,
-    name: resultSummaryInteractiveTabletName,
-    size: resultSummaryTabletSize,
-    builder: (_) => const ResultSummaryPreviewContent(),
-  );
-}
-
-@Preview(
-  group: resultSummaryGroup,
-  name: resultSummaryInteractiveTabletName,
-  size: resultSummaryTabletSize,
-  brightness: Brightness.light,
-)
-Widget resultSummaryInteractiveTabletPreview() {
-  return PreviewSurface(
-    previewCase: _resultSummaryInteractiveTabletPreviewCase,
   );
 }
 

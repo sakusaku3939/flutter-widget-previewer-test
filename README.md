@@ -31,9 +31,9 @@ fvm flutter widget-preview start
 
 Previewer には各 `screens/{feature}/*_preview.dart` の個別 `@Preview` が表示されます。
 
-- `Home`: mobile / tablet
+- `Home`: mobile
 - `PreviewGallery`: mobile / tablet
-- `ResultSummary`: interactive mobile / interactive tablet / 状態別 mobile。`ResultSummaryNotifier` で表示状態を切り替える状態管理の例です。
+- `ResultSummary`: interactive mobile / 状態別 mobile。`ResultSummaryNotifier` で表示状態を切り替える状態管理の例です。
 
 表示する状態と `@Preview` adapter は各画面の `screens/{feature}/` 配下へ置きます。普段の UI 開発では画面単位の PreviewCase と `@Preview` を追加します。部品単位の `@Preview` は作らず、Previewer の group も画面単位で分けます。
 

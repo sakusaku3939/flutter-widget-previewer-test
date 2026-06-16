@@ -8,10 +8,8 @@ import 'home_screen.dart';
 const homeGroup = 'Home';
 
 const homeMobileSize = Size(390, 760);
-const homeTabletSize = Size(760, 640);
 
 const homeMobileName = 'Mobile layout';
-const homeTabletName = 'Tablet layout';
 
 PreviewCase get _homeMobilePreviewCase {
   return PreviewCase(
@@ -33,26 +31,6 @@ Widget homeMobilePreview() {
   return PreviewSurface(previewCase: _homeMobilePreviewCase);
 }
 
-PreviewCase get _homeTabletPreviewCase {
-  return PreviewCase(
-    goldenFileName: 'home_tablet',
-    group: homeGroup,
-    name: homeTabletName,
-    size: homeTabletSize,
-    builder: (_) => const HomeContent(),
-  );
-}
-
-@Preview(
-  group: homeGroup,
-  name: homeTabletName,
-  size: homeTabletSize,
-  brightness: Brightness.light,
-)
-Widget homeTabletPreview() {
-  return PreviewSurface(previewCase: _homeTabletPreviewCase);
-}
-
 List<PreviewCase> get homePreviewCases {
-  return [_homeMobilePreviewCase, _homeTabletPreviewCase];
+  return [_homeMobilePreviewCase];
 }
