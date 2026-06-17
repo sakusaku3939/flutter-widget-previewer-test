@@ -43,17 +43,21 @@ Previewer には各 `screens/{feature}/*_preview.dart` の個別 `@Preview` が�
 
 Alchemist でレイアウト確認用の PreviewCase を Visual Regression Testing (VRT) します。対象は `lib/src/presentation/previews/vrt_previews.dart` の `visualRegressionPreviews` に集約しています。
 
+VRT画像は Git 管理せず、ローカルまたは CI 上で都度生成します。PR では base branch と head branch の画像を同じ CI 環境で生成し、生成結果同士を比較します。
+
 ```bash
 fvm flutter test test/vrt/previews_vrt_test.dart
 ```
 
-VRT画像を再生成する場合は次を実行します。
+VRT画像を生成する場合は次を実行します。
 
 ```bash
 fvm flutter test test/vrt/previews_vrt_test.dart --update-goldens
 ```
 
-OS別のローカル画像は無効化し、AlchemistのCI用出力だけを使います。
+生成された `test/vrt/goldens/ci/*.png` はローカル確認用の一時成果物で、コミット対象にはしません。
+
+OS別のローカル画像は無効化し、AlchemistのCI用出力だけを比較対象に使います。
 
 ## Android エミュレーター確認
 
@@ -90,7 +94,7 @@ fvm flutter test
 
 ## CI VRT Report
 
-GitHub Actions の `vrt` workflow では、PRごとに base branch と head branch のVRT画像を生成し、`reg-cli` でHTMLレポートを作成します。
+GitHub Actions の `vrt` workflow では、PRごとに base branch と head branch のVRT画像を生成し、`reg-cli` でHTMLレポートを作成します。push ではスクリーンショット生成が通ることを確認します。
 
 - base: PRのbase branch（通常は `main`）
 - head: PR branch
