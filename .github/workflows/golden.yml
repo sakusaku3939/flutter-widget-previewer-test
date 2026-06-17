@@ -5,6 +5,10 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+  issues: write
+
 jobs:
   golden:
     runs-on: ubuntu-latest
@@ -60,3 +64,47 @@ jobs:
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "Download the HTML report artifact:" >> "$GITHUB_STEP_SUMMARY"
           echo "${{ steps.golden_report.outputs.artifact-url }}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upsert golden report PR comment
+        if: failure() && github.event_name == 'pull_request'
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const marker = '<!-- golden-reg-cli-report -->';
+            const artifactUrl = '${{ steps.golden_report.outputs.artifact-url }}';
+            const body = [
+              marker,
+              '### Golden test report',
+              '',
+              `Golden tests failed in [run #${context.runNumber}](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}).`,
+              '',
+              `Download the HTML report artifact: ${artifactUrl}`,
+              '',
+              '_This comment is updated on each golden report failure._',
+            ].join('\n');
+
+            const {owner, repo} = context.repo;
+            const issue_number = context.issue.number;
+            const comments = await github.paginate(
+              github.rest.issues.listComments,
+              {owner, repo, issue_number, per_page: 100},
+            );
+            const existing = comments.find((comment) =>
+              comment.user.type === 'Bot' && comment.body.includes(marker),
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body,
+              });
+            }
