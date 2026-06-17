@@ -90,14 +90,11 @@ fvm flutter test
 
 ## CI Golden Report
 
-GitHub Actions の `golden` workflow では Golden Test 失敗時に Flutter が出力する差分画像を `reg-cli` のHTMLレポートへ変換し、artifactとしてアップロードします。
+GitHub Actions の `golden` workflow では、PRごとに base branch と head branch のCI golden画像を生成し、`reg-cli` でHTMLレポートを作成します。
 
-ローカルで失敗画像からHTMLレポートを作る場合は、Golden Test失敗後に次を実行します。
+- base: PRのbase branch（通常は `main`）
+- head: PR branch
+- 出力: `golden-reg-report-<run_id>` artifact
+- PRコメント: 差分あり/なしに関係なく、同じbotコメントを更新
 
-```bash
-fvm dart run tool/generate_reg_cli_golden_report.dart
-cd build/golden-reg-report
-npx --yes reg-cli@0.18.16 -F reg.json -R index.html
-```
-
-生成される `build/golden-reg-report/index.html` は、`expected` / `actual` / `diff` の画像ディレクトリと一緒に開いて確認します。
+通常のgolden検証も同じworkflow内で実行します。head branchで生成したgolden画像とコミット済みgolden画像が一致しない場合は、レポートとPRコメントを作成したうえでCIを失敗させます。
