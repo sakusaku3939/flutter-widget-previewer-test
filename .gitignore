@@ -47,7 +47,6 @@ app.*.map.json
 # Alchemist local golden outputs
 test/**/goldens/goldens/**/*.*
 test/**/goldens/failures/**/*.*
-!test/**/goldens/goldens/ci/*.*
 
 # FVM Version Cache
 .fvm/
