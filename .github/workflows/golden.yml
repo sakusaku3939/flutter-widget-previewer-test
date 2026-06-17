@@ -8,6 +8,7 @@ on:
 permissions:
   contents: write
   issues: write
+  pages: write
   pull-requests: write
 
 jobs:
@@ -168,7 +169,8 @@ jobs:
           if ! git diff --cached --quiet; then
             git commit -m "Update golden report for PR #${{ github.event.pull_request.number }}"
             git push origin "HEAD:$pages_branch"
-            gh api --method POST "repos/${GITHUB_REPOSITORY}/pages/builds" >/dev/null
+            gh api --method POST "repos/${GITHUB_REPOSITORY}/pages/builds" >/dev/null ||
+              echo "Pages build request was not accepted; continuing because the report was pushed."
           fi
 
           report_url="${pages_url%/}/$relative_report_path/"
