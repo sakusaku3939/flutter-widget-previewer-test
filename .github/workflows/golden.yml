@@ -6,7 +6,7 @@ on:
     branches: [main]
 
 permissions:
-  contents: read
+  contents: write
   issues: write
   pull-requests: write
 
@@ -15,6 +15,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GOLDEN_REPORT_DIR: /tmp/golden-reg-report
+      PAGES_BRANCH: vrt/screenshot-reports
+      PAGES_PATH: docs
 
     steps:
       - name: Checkout push ref
@@ -118,12 +120,50 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+      - name: Publish golden report to GitHub Pages branch
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        id: publish_pages
+        run: |
+          set -euo pipefail
+
+          relative_report_path="golden/pr-${{ github.event.pull_request.number }}"
+          publish_root="${RUNNER_TEMP}/pages-source"
+          mkdir -p "$publish_root"
+
+          if git ls-remote --exit-code --heads origin "$PAGES_BRANCH" >/dev/null 2>&1; then
+            git fetch origin "$PAGES_BRANCH" --depth=1
+            git worktree add "$publish_root" FETCH_HEAD
+          else
+            git worktree add --detach "$publish_root"
+            cd "$publish_root"
+            git switch --orphan "$PAGES_BRANCH"
+            git rm -rf . >/dev/null 2>&1 || true
+            cd -
+          fi
+
+          target_dir="$publish_root/$PAGES_PATH/$relative_report_path"
+          rm -rf "$target_dir"
+          mkdir -p "$target_dir"
+          touch "$publish_root/$PAGES_PATH/.nojekyll"
+          cp -R "$GOLDEN_REPORT_DIR"/. "$target_dir"/
+
+          cd "$publish_root"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$PAGES_PATH"
+          if ! git diff --cached --quiet; then
+            git commit -m "Update screenshot report for PR #${{ github.event.pull_request.number }} [skip ci]"
+            git push origin "HEAD:$PAGES_BRANCH"
+          fi
+
+          echo "url=https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/$relative_report_path/" >> "$GITHUB_OUTPUT"
+
       - name: Add golden report summary
         if: github.event_name == 'pull_request'
         run: |
           echo "### スクリーンショット差分" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "[差分画像を確認する](${{ steps.golden_report.outputs.artifact-url }})" >> "$GITHUB_STEP_SUMMARY"
+          echo "[差分画像を確認する](${{ steps.publish_pages.outputs.url || steps.golden_report.outputs.artifact-url }})" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           if [ "${{ steps.golden_report_summary.outputs.has_diff }}" = "true" ]; then
             echo "- **結果: 差分あり**" >> "$GITHUB_STEP_SUMMARY"
@@ -140,7 +180,8 @@ jobs:
           script: |
             const marker = '<!-- golden-reg-cli-report -->';
             const artifactUrl = '${{ steps.golden_report.outputs.artifact-url }}';
-            const reportUrl = artifactUrl;
+            const pagesUrl = '${{ steps.publish_pages.outputs.url }}';
+            const reportUrl = pagesUrl || artifactUrl;
             const baseRef = '${{ github.event.pull_request.base.ref }}';
             const baseSha = '${{ github.event.pull_request.base.sha }}'.slice(0, 7);
             const headRef = '${{ github.event.pull_request.head.ref }}';
