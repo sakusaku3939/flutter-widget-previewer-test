@@ -6,18 +6,13 @@ on:
     branches: [main]
 
 permissions:
-  contents: read
+  contents: write
   issues: write
-  pages: write
   pull-requests: write
-  id-token: write
 
 jobs:
   golden:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy_pages.outputs.page_url }}
     env:
       GOLDEN_REPORT_DIR: /tmp/golden-reg-report
 
@@ -129,20 +124,49 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      - name: Configure GitHub Pages
+      - name: Publish golden report to GitHub Pages
         if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
-        uses: actions/configure-pages@v5
+        id: publish_pages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
 
-      - name: Upload GitHub Pages artifact
-        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: ${{ env.GOLDEN_REPORT_DIR }}
+          page_info="$(gh api "repos/${GITHUB_REPOSITORY}/pages")"
+          pages_branch="$(echo "$page_info" | jq -r '.source.branch')"
+          pages_path="$(echo "$page_info" | jq -r '.source.path')"
+          pages_url="$(echo "$page_info" | jq -r '.html_url')"
+          relative_report_path="golden/pr-${{ github.event.pull_request.number }}"
+          publish_root="${RUNNER_TEMP}/pages-source"
 
-      - name: Deploy golden report to GitHub Pages
-        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
-        id: deploy_pages
-        uses: actions/deploy-pages@v4
+          git fetch origin "$pages_branch" --depth=1
+          git worktree add "$publish_root" FETCH_HEAD
+
+          publish_subdir="${pages_path#/}"
+          publish_subdir="${publish_subdir%/}"
+          target_dir="$publish_root"
+          add_path="$relative_report_path"
+          if [ -n "$publish_subdir" ]; then
+            target_dir="$target_dir/$publish_subdir"
+            add_path="$publish_subdir/$relative_report_path"
+          fi
+          target_dir="$target_dir/$relative_report_path"
+
+          rm -rf "$target_dir"
+          mkdir -p "$target_dir"
+          cp -R "$GOLDEN_REPORT_DIR"/. "$target_dir"/
+
+          cd "$publish_root"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$add_path"
+          if ! git diff --cached --quiet; then
+            git commit -m "Update golden report for PR #${{ github.event.pull_request.number }}"
+            git push origin "HEAD:$pages_branch"
+          fi
+
+          report_url="${pages_url%/}/$relative_report_path/"
+          echo "url=$report_url" >> "$GITHUB_OUTPUT"
 
       - name: Add golden report summary
         if: github.event_name == 'pull_request'
@@ -160,7 +184,7 @@ jobs:
           echo "| Unchanged | ${{ steps.golden_report_summary.outputs.passed }} |" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "HTMLレポート:" >> "$GITHUB_STEP_SUMMARY"
-          echo "${{ steps.deploy_pages.outputs.page_url || steps.golden_report.outputs.artifact-url }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "${{ steps.publish_pages.outputs.url || steps.golden_report.outputs.artifact-url }}" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upsert golden report PR comment
         if: github.event_name == 'pull_request'
@@ -169,7 +193,7 @@ jobs:
           script: |
             const marker = '<!-- golden-reg-cli-report -->';
             const artifactUrl = '${{ steps.golden_report.outputs.artifact-url }}';
-            const pagesUrl = '${{ steps.deploy_pages.outputs.page_url }}';
+            const pagesUrl = '${{ steps.publish_pages.outputs.url }}';
             const reportUrl = pagesUrl || artifactUrl;
             const baseRef = '${{ github.event.pull_request.base.ref }}';
             const baseSha = '${{ github.event.pull_request.base.sha }}'.slice(0, 7);
