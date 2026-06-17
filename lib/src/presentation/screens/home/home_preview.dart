@@ -13,7 +13,7 @@ const homeMobileName = 'Mobile layout';
 
 PreviewCase get _homeMobilePreviewCase {
   return PreviewCase(
-    goldenFileName: 'home_mobile',
+    vrtFileName: 'home_mobile',
     group: homeGroup,
     name: homeMobileName,
     size: homeMobileSize,

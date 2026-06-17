@@ -15,7 +15,7 @@ const previewGalleryTabletName = 'Tablet layout';
 
 PreviewCase get _previewGalleryMobilePreviewCase {
   return PreviewCase(
-    goldenFileName: 'preview_gallery_mobile',
+    vrtFileName: 'preview_gallery_mobile',
     group: previewGalleryGroup,
     name: previewGalleryMobileName,
     size: previewGalleryMobileSize,
@@ -35,7 +35,7 @@ Widget previewGalleryMobilePreview() {
 
 PreviewCase get _previewGalleryTabletPreviewCase {
   return PreviewCase(
-    goldenFileName: 'preview_gallery_tablet',
+    vrtFileName: 'preview_gallery_tablet',
     group: previewGalleryGroup,
     name: previewGalleryTabletName,
     size: previewGalleryTabletSize,

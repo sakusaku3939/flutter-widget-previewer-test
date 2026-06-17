@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class PreviewCase {
   const PreviewCase({
-    required this.goldenFileName,
+    required this.vrtFileName,
     required this.group,
     required this.name,
     required this.size,
@@ -10,7 +10,7 @@ class PreviewCase {
     this.brightness = Brightness.light,
   });
 
-  final String goldenFileName;
+  final String vrtFileName;
   final String group;
   final String name;
   final Size size;
