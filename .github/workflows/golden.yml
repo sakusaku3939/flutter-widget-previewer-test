@@ -145,24 +145,30 @@ jobs:
           publish_subdir="${pages_path#/}"
           publish_subdir="${publish_subdir%/}"
           target_dir="$publish_root"
+          pages_root="$publish_root"
           add_path="$relative_report_path"
+          nojekyll_path=".nojekyll"
           if [ -n "$publish_subdir" ]; then
             target_dir="$target_dir/$publish_subdir"
+            pages_root="$pages_root/$publish_subdir"
             add_path="$publish_subdir/$relative_report_path"
+            nojekyll_path="$publish_subdir/.nojekyll"
           fi
           target_dir="$target_dir/$relative_report_path"
 
           rm -rf "$target_dir"
           mkdir -p "$target_dir"
+          touch "$pages_root/.nojekyll"
           cp -R "$GOLDEN_REPORT_DIR"/. "$target_dir"/
 
           cd "$publish_root"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "$add_path"
+          git add "$add_path" "$nojekyll_path"
           if ! git diff --cached --quiet; then
             git commit -m "Update golden report for PR #${{ github.event.pull_request.number }}"
             git push origin "HEAD:$pages_branch"
+            gh api --method POST "repos/${GITHUB_REPOSITORY}/pages/builds" >/dev/null
           fi
 
           report_url="${pages_url%/}/$relative_report_path/"
@@ -176,12 +182,12 @@ jobs:
           echo "Base: \`${{ github.event.pull_request.base.ref }}\` @ \`${{ github.event.pull_request.base.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "Head: \`${{ github.event.pull_request.head.ref }}\` @ \`${{ github.event.pull_request.head.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Result | Count |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| 種別 | 件数 |" >> "$GITHUB_STEP_SUMMARY"
           echo "| --- | ---: |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Changed | ${{ steps.golden_report_summary.outputs.failed }} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Added | ${{ steps.golden_report_summary.outputs.added }} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Deleted | ${{ steps.golden_report_summary.outputs.deleted }} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Unchanged | ${{ steps.golden_report_summary.outputs.passed }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| 変更 | ${{ steps.golden_report_summary.outputs.failed }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| 追加 | ${{ steps.golden_report_summary.outputs.added }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| 削除 | ${{ steps.golden_report_summary.outputs.deleted }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| 一致 | ${{ steps.golden_report_summary.outputs.passed }} |" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "HTMLレポート:" >> "$GITHUB_STEP_SUMMARY"
           echo "${{ steps.publish_pages.outputs.url || steps.golden_report.outputs.artifact-url }}" >> "$GITHUB_STEP_SUMMARY"
@@ -212,16 +218,8 @@ jobs:
               `結果: **${status}**`,
               verification,
               '',
-              `Base: \`${baseRef}\` @ \`${baseSha}\``,
-              `Head: \`${headRef}\` @ \`${headSha}\``,
-              '',
-              '| 種別 | 件数 |',
-              '| --- | ---: |',
-              `| 変更 | ${{ steps.golden_report_summary.outputs.failed }} |`,
-              `| 追加 | ${{ steps.golden_report_summary.outputs.added }} |`,
-              `| 削除 | ${{ steps.golden_report_summary.outputs.deleted }} |`,
-              `| 一致 | ${{ steps.golden_report_summary.outputs.passed }} |`,
-              '',
+              `比較: \`${baseRef}\` @ \`${baseSha}\` -> \`${headRef}\` @ \`${headSha}\``,
+              `件数: 変更 ${{ steps.golden_report_summary.outputs.failed }} / 追加 ${{ steps.golden_report_summary.outputs.added }} / 削除 ${{ steps.golden_report_summary.outputs.deleted }} / 一致 ${{ steps.golden_report_summary.outputs.passed }}`,
               `HTMLレポート: ${reportUrl}`,
               '',
               `_run #${context.runNumber} で更新_`,
