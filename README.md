@@ -41,13 +41,9 @@ Previewer には各 `screens/{feature}/*_preview.dart` の個別 `@Preview` が�
 
 ## VRT
 
-Alchemist でレイアウト確認用の PreviewCase を Visual Regression Testing (VRT) します。対象は `lib/src/presentation/previews/vrt_previews.dart` の `visualRegressionPreviews` に集約しています。
+Flutter 標準の golden test でレイアウト確認用の PreviewCase を Visual Regression Testing (VRT) します。対象は `lib/src/presentation/previews/vrt_previews.dart` の `visualRegressionPreviews` に集約しています。
 
 VRT画像は Git 管理せず、ローカルまたは CI 上で都度生成します。PR では base branch と head branch の画像を同じ CI 環境で生成し、生成結果同士を比較します。
-
-```bash
-fvm flutter test test/vrt/previews_vrt_test.dart
-```
 
 VRT画像を生成する場合は次を実行します。
 
@@ -55,9 +51,15 @@ VRT画像を生成する場合は次を実行します。
 fvm flutter test test/vrt/previews_vrt_test.dart --update-goldens
 ```
 
+生成済み画像と現在の描画結果をローカルで比較する場合は次を実行します。
+
+```bash
+fvm flutter test test/vrt/previews_vrt_test.dart
+```
+
 生成された `test/vrt/goldens/ci/*.png` はローカル確認用の一時成果物で、コミット対象にはしません。
 
-OS別のローカル画像は無効化し、AlchemistのCI用出力だけを比較対象に使います。
+生成画像は `test/vrt/goldens/ci/` に出力し、PR CI では base branch と head branch の同名画像を比較します。
 
 ## Android エミュレーター確認
 
@@ -89,6 +91,7 @@ fvm flutter run -d <device_id>
 
 ```bash
 fvm flutter analyze
+fvm flutter test test/vrt/previews_vrt_test.dart --update-goldens
 fvm flutter test
 ```
 

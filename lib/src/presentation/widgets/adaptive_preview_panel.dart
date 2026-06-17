@@ -31,7 +31,7 @@ class AdaptivePreviewPanel extends StatelessWidget {
                 crossAxisCount: 2,
                 crossAxisSpacing: AppTokens.spacing,
                 mainAxisSpacing: AppTokens.spacing,
-                childAspectRatio: 2.8,
+                childAspectRatio: 2.4,
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 children: cards,
