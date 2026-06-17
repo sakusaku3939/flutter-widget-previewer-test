@@ -8,7 +8,9 @@ on:
 permissions:
   contents: read
   issues: write
+  pages: write
   pull-requests: write
+  id-token: write
 
 jobs:
   golden:
@@ -124,10 +126,25 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+      - name: Configure GitHub Pages
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/configure-pages@v5
+
+      - name: Upload GitHub Pages artifact
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ${{ env.GOLDEN_REPORT_DIR }}
+
+      - name: Deploy golden report to GitHub Pages
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        id: deploy_pages
+        uses: actions/deploy-pages@v4
+
       - name: Add golden report summary
         if: github.event_name == 'pull_request'
         run: |
-          echo "### Golden visual diff report" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Golden差分" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "Base: \`${{ github.event.pull_request.base.ref }}\` @ \`${{ github.event.pull_request.base.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "Head: \`${{ github.event.pull_request.head.ref }}\` @ \`${{ github.event.pull_request.head.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
@@ -139,8 +156,8 @@ jobs:
           echo "| Deleted | ${{ steps.golden_report_summary.outputs.deleted }} |" >> "$GITHUB_STEP_SUMMARY"
           echo "| Unchanged | ${{ steps.golden_report_summary.outputs.passed }} |" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "Download the HTML report artifact:" >> "$GITHUB_STEP_SUMMARY"
-          echo "${{ steps.golden_report.outputs.artifact-url }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "HTMLレポート:" >> "$GITHUB_STEP_SUMMARY"
+          echo "${{ steps.deploy_pages.outputs.page_url || steps.golden_report.outputs.artifact-url }}" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upsert golden report PR comment
         if: github.event_name == 'pull_request'
@@ -149,38 +166,38 @@ jobs:
           script: |
             const marker = '<!-- golden-reg-cli-report -->';
             const artifactUrl = '${{ steps.golden_report.outputs.artifact-url }}';
+            const pagesUrl = '${{ steps.deploy_pages.outputs.page_url }}';
+            const reportUrl = pagesUrl || artifactUrl;
             const baseRef = '${{ github.event.pull_request.base.ref }}';
             const baseSha = '${{ github.event.pull_request.base.sha }}'.slice(0, 7);
             const headRef = '${{ github.event.pull_request.head.ref }}';
             const headSha = '${{ github.event.pull_request.head.sha }}'.slice(0, 7);
             const hasDiff = '${{ steps.golden_report_summary.outputs.has_diff }}' === 'true';
             const verificationFailed = '${{ steps.verify_goldens.outcome }}' === 'failure';
-            const status = hasDiff
-              ? 'Visual differences were found against the PR base.'
-              : 'No visual differences were found against the PR base.';
+            const status = hasDiff ? '差分あり' : '差分なし';
             const verification = verificationFailed
-              ? 'Committed head goldens do not match generated head goldens.'
-              : 'Committed head goldens match generated head goldens.';
+              ? 'golden画像の更新が必要です。'
+              : 'golden画像は最新です。';
             const body = [
               marker,
-              '### Golden visual diff report',
+              '### Golden差分',
               '',
-              status,
+              `結果: **${status}**`,
               verification,
               '',
               `Base: \`${baseRef}\` @ \`${baseSha}\``,
               `Head: \`${headRef}\` @ \`${headSha}\``,
               '',
-              '| Result | Count |',
+              '| 種別 | 件数 |',
               '| --- | ---: |',
-              `| Changed | ${{ steps.golden_report_summary.outputs.failed }} |`,
-              `| Added | ${{ steps.golden_report_summary.outputs.added }} |`,
-              `| Deleted | ${{ steps.golden_report_summary.outputs.deleted }} |`,
-              `| Unchanged | ${{ steps.golden_report_summary.outputs.passed }} |`,
+              `| 変更 | ${{ steps.golden_report_summary.outputs.failed }} |`,
+              `| 追加 | ${{ steps.golden_report_summary.outputs.added }} |`,
+              `| 削除 | ${{ steps.golden_report_summary.outputs.deleted }} |`,
+              `| 一致 | ${{ steps.golden_report_summary.outputs.passed }} |`,
               '',
-              `HTML report artifact: ${artifactUrl}`,
+              `HTMLレポート: ${reportUrl}`,
               '',
-              `_Updated from [run #${context.runNumber}](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})._`,
+              `_run #${context.runNumber} で更新_`,
             ].join('\n');
 
             const {owner, repo} = context.repo;
