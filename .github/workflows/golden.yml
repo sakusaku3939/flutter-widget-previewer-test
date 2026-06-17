@@ -179,20 +179,19 @@ jobs:
       - name: Add golden report summary
         if: github.event_name == 'pull_request'
         run: |
-          echo "### Golden差分" >> "$GITHUB_STEP_SUMMARY"
+          echo "### スクリーンショット差分" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "Base: \`${{ github.event.pull_request.base.ref }}\` @ \`${{ github.event.pull_request.base.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "Head: \`${{ github.event.pull_request.head.ref }}\` @ \`${{ github.event.pull_request.head.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
+          if [ "${{ steps.golden_report_summary.outputs.has_diff }}" = "true" ]; then
+            echo "**結果: 差分あり**" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "**結果: 差分なし**" >> "$GITHUB_STEP_SUMMARY"
+          fi
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "| 種別 | 件数 |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| --- | ---: |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| 変更 | ${{ steps.golden_report_summary.outputs.failed }} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| 追加 | ${{ steps.golden_report_summary.outputs.added }} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| 削除 | ${{ steps.golden_report_summary.outputs.deleted }} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| 一致 | ${{ steps.golden_report_summary.outputs.passed }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "[差分画像を確認する](${{ steps.publish_pages.outputs.url || steps.golden_report.outputs.artifact-url }})" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "HTMLレポート:" >> "$GITHUB_STEP_SUMMARY"
-          echo "${{ steps.publish_pages.outputs.url || steps.golden_report.outputs.artifact-url }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "変更: ${{ steps.golden_report_summary.outputs.failed }}件 / 追加: ${{ steps.golden_report_summary.outputs.added }}件 / 削除: ${{ steps.golden_report_summary.outputs.deleted }}件 / 一致: ${{ steps.golden_report_summary.outputs.passed }}件" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "\`${{ github.event.pull_request.base.ref }}\` @ \`${{ github.event.pull_request.base.sha }}\` -> \`${{ github.event.pull_request.head.ref }}\` @ \`${{ github.event.pull_request.head.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upsert golden report PR comment
         if: github.event_name == 'pull_request'
@@ -208,21 +207,18 @@ jobs:
             const headRef = '${{ github.event.pull_request.head.ref }}';
             const headSha = '${{ github.event.pull_request.head.sha }}'.slice(0, 7);
             const hasDiff = '${{ steps.golden_report_summary.outputs.has_diff }}' === 'true';
-            const verificationFailed = '${{ steps.verify_goldens.outcome }}' === 'failure';
             const status = hasDiff ? '差分あり' : '差分なし';
-            const verification = verificationFailed
-              ? 'golden画像の更新が必要です。'
-              : 'golden画像は最新です。';
             const body = [
               marker,
-              '### Golden差分',
+              '### スクリーンショット差分',
               '',
-              `結果: **${status}**`,
-              verification,
+              `**結果: ${status}**`,
               '',
-              `比較: \`${baseRef}\` @ \`${baseSha}\` -> \`${headRef}\` @ \`${headSha}\``,
-              `件数: 変更 ${{ steps.golden_report_summary.outputs.failed }} / 追加 ${{ steps.golden_report_summary.outputs.added }} / 削除 ${{ steps.golden_report_summary.outputs.deleted }} / 一致 ${{ steps.golden_report_summary.outputs.passed }}`,
-              `HTMLレポート: ${reportUrl}`,
+              `[差分画像を確認する](${reportUrl})`,
+              '',
+              `変更: ${{ steps.golden_report_summary.outputs.failed }}件 / 追加: ${{ steps.golden_report_summary.outputs.added }}件 / 削除: ${{ steps.golden_report_summary.outputs.deleted }}件 / 一致: ${{ steps.golden_report_summary.outputs.passed }}件`,
+              '',
+              `\`${baseRef}\` @ \`${baseSha}\` -> \`${headRef}\` @ \`${headSha}\``,
               '',
               `_run #${context.runNumber} で更新_`,
             ].join('\n');
