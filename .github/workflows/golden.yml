@@ -13,7 +13,7 @@ jobs:
   golden:
     runs-on: ubuntu-latest
     env:
-      GOLDEN_REPORT_DIR: ${{ runner.temp }}/golden-reg-report
+      GOLDEN_REPORT_DIR: /tmp/golden-reg-report
 
     steps:
       - name: Checkout push ref
