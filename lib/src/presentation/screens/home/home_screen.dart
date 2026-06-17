@@ -42,7 +42,7 @@ class HomeContent extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Screens updated', style: theme.textTheme.headlineSmall),
+        Text('Screens', style: theme.textTheme.headlineSmall),
         const SizedBox(height: 8),
         Text(
           'プレビュー対象の画面へ移動して、通常アプリ上でも同じ UI を確認できます。',
