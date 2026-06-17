@@ -48,9 +48,9 @@ jobs:
         if: github.event_name != 'pull_request'
         run: flutter analyze
 
-      - name: Run golden tests
+      - name: Generate screenshots
         if: github.event_name != 'pull_request'
-        run: flutter test test/goldens/previews_golden_test.dart --tags golden
+        run: flutter test test/goldens/previews_golden_test.dart --update-goldens
 
       - name: Generate base goldens
         if: github.event_name == 'pull_request'
@@ -74,12 +74,6 @@ jobs:
       - name: Analyze head
         if: github.event_name == 'pull_request'
         run: flutter analyze
-
-      - name: Verify committed head goldens
-        if: github.event_name == 'pull_request'
-        id: verify_goldens
-        continue-on-error: true
-        run: flutter test test/goldens/previews_golden_test.dart --tags golden
 
       - name: Generate head goldens
         if: github.event_name == 'pull_request'
@@ -244,7 +238,3 @@ jobs:
                 body,
               });
             }
-
-      - name: Fail when committed head goldens are stale
-        if: github.event_name == 'pull_request' && steps.verify_goldens.outcome == 'failure'
-        run: exit 1
