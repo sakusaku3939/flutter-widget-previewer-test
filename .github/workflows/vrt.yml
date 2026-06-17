@@ -1,4 +1,4 @@
-name: golden
+name: vrt
 
 on:
   pull_request:
@@ -11,10 +11,10 @@ permissions:
   pull-requests: write
 
 jobs:
-  golden:
+  vrt:
     runs-on: ubuntu-latest
     env:
-      GOLDEN_REPORT_DIR: /tmp/golden-reg-report
+      VRT_REPORT_DIR: /tmp/vrt-report
       PAGES_BRANCH: vrt/screenshot-reports
       PAGES_PATH: docs
 
@@ -51,16 +51,16 @@ jobs:
 
       - name: Generate screenshots
         if: github.event_name != 'pull_request'
-        run: flutter test test/goldens/previews_golden_test.dart --update-goldens
+        run: flutter test test/vrt/previews_vrt_test.dart --update-goldens
 
-      - name: Generate base goldens
+      - name: Generate base VRT screenshots
         if: github.event_name == 'pull_request'
         run: |
-          rm -rf "$GOLDEN_REPORT_DIR"
-          mkdir -p "$GOLDEN_REPORT_DIR/expected" "$GOLDEN_REPORT_DIR/actual" "$GOLDEN_REPORT_DIR/diff"
+          rm -rf "$VRT_REPORT_DIR"
+          mkdir -p "$VRT_REPORT_DIR/expected" "$VRT_REPORT_DIR/actual" "$VRT_REPORT_DIR/diff"
           flutter pub get
-          flutter test test/goldens/previews_golden_test.dart --update-goldens
-          cp test/goldens/goldens/ci/*.png "$GOLDEN_REPORT_DIR/expected/"
+          flutter test test/vrt/previews_vrt_test.dart --update-goldens
+          cp test/vrt/goldens/ci/*.png "$VRT_REPORT_DIR/expected/"
 
       - name: Checkout head ref
         if: github.event_name == 'pull_request'
@@ -76,26 +76,26 @@ jobs:
         if: github.event_name == 'pull_request'
         run: flutter analyze
 
-      - name: Generate head goldens
+      - name: Generate head VRT screenshots
         if: github.event_name == 'pull_request'
         run: |
-          flutter test test/goldens/previews_golden_test.dart --update-goldens
-          cp test/goldens/goldens/ci/*.png "$GOLDEN_REPORT_DIR/actual/"
+          flutter test test/vrt/previews_vrt_test.dart --update-goldens
+          cp test/vrt/goldens/ci/*.png "$VRT_REPORT_DIR/actual/"
 
-      - name: Generate golden HTML report
+      - name: Generate VRT HTML report
         if: github.event_name == 'pull_request'
-        working-directory: ${{ env.GOLDEN_REPORT_DIR }}
+        working-directory: ${{ env.VRT_REPORT_DIR }}
         run: npx --yes reg-cli@0.18.16 actual expected diff -J reg.json -R index.html -I
 
-      - name: Summarize golden report
+      - name: Summarize VRT report
         if: github.event_name == 'pull_request'
-        id: golden_report_summary
+        id: vrt_report_summary
         run: |
           node <<'NODE'
           const fs = require('fs');
           const path = require('path');
           const report = JSON.parse(
-            fs.readFileSync(path.join(process.env.GOLDEN_REPORT_DIR, 'reg.json'), 'utf8'),
+            fs.readFileSync(path.join(process.env.VRT_REPORT_DIR, 'reg.json'), 'utf8'),
           );
           const failed = report.failedItems?.length ?? 0;
           const added = report.newItems?.length ?? 0;
@@ -110,23 +110,23 @@ jobs:
           fs.appendFileSync(process.env.GITHUB_OUTPUT, `has_diff=${changed > 0}\n`);
           NODE
 
-      - name: Upload golden HTML report
+      - name: Upload VRT HTML report
         if: github.event_name == 'pull_request'
-        id: golden_report
+        id: vrt_report
         uses: actions/upload-artifact@v4
         with:
-          name: golden-reg-report-${{ github.run_id }}
-          path: ${{ env.GOLDEN_REPORT_DIR }}
+          name: vrt-report-${{ github.run_id }}
+          path: ${{ env.VRT_REPORT_DIR }}
           if-no-files-found: error
           retention-days: 14
 
-      - name: Publish golden report to GitHub Pages branch
+      - name: Publish VRT report to GitHub Pages branch
         if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         id: publish_pages
         run: |
           set -euo pipefail
 
-          relative_report_path="golden/pr-${{ github.event.pull_request.number }}"
+          relative_report_path="vrt/pr-${{ github.event.pull_request.number }}"
           publish_root="${RUNNER_TEMP}/pages-source"
           mkdir -p "$publish_root"
 
@@ -145,48 +145,48 @@ jobs:
           rm -rf "$target_dir"
           mkdir -p "$target_dir"
           touch "$publish_root/$PAGES_PATH/.nojekyll"
-          cp -R "$GOLDEN_REPORT_DIR"/. "$target_dir"/
+          cp -R "$VRT_REPORT_DIR"/. "$target_dir"/
 
           cd "$publish_root"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add "$PAGES_PATH"
           if ! git diff --cached --quiet; then
-            git commit -m "Update screenshot report for PR #${{ github.event.pull_request.number }} [skip ci]"
+            git commit -m "Update VRT report for PR #${{ github.event.pull_request.number }} [skip ci]"
             git push origin "HEAD:$PAGES_BRANCH"
           fi
 
           echo "url=https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/$relative_report_path/" >> "$GITHUB_OUTPUT"
 
-      - name: Add golden report summary
+      - name: Add VRT report summary
         if: github.event_name == 'pull_request'
         run: |
           echo "### スクリーンショット差分" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "[差分画像を確認する](${{ steps.publish_pages.outputs.url || steps.golden_report.outputs.artifact-url }})" >> "$GITHUB_STEP_SUMMARY"
+          echo "[差分画像を確認する](${{ steps.publish_pages.outputs.url || steps.vrt_report.outputs.artifact-url }})" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          if [ "${{ steps.golden_report_summary.outputs.has_diff }}" = "true" ]; then
+          if [ "${{ steps.vrt_report_summary.outputs.has_diff }}" = "true" ]; then
             echo "- **結果: 差分あり**" >> "$GITHUB_STEP_SUMMARY"
           else
             echo "- **結果: 差分なし**" >> "$GITHUB_STEP_SUMMARY"
           fi
-          echo "- 変更: ${{ steps.golden_report_summary.outputs.failed }}件 / 追加: ${{ steps.golden_report_summary.outputs.added }}件 / 削除: ${{ steps.golden_report_summary.outputs.deleted }}件 / 一致: ${{ steps.golden_report_summary.outputs.passed }}件" >> "$GITHUB_STEP_SUMMARY"
+          echo "- 変更: ${{ steps.vrt_report_summary.outputs.failed }}件 / 追加: ${{ steps.vrt_report_summary.outputs.added }}件 / 削除: ${{ steps.vrt_report_summary.outputs.deleted }}件 / 一致: ${{ steps.vrt_report_summary.outputs.passed }}件" >> "$GITHUB_STEP_SUMMARY"
           echo "- \`${{ github.event.pull_request.base.ref }}\` @ \`${{ github.event.pull_request.base.sha }}\` -> \`${{ github.event.pull_request.head.ref }}\` @ \`${{ github.event.pull_request.head.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Upsert golden report PR comment
+      - name: Upsert VRT report PR comment
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v8
         with:
           script: |
-            const marker = '<!-- golden-reg-cli-report -->';
-            const artifactUrl = '${{ steps.golden_report.outputs.artifact-url }}';
+            const marker = '<!-- vrt-report -->';
+            const artifactUrl = '${{ steps.vrt_report.outputs.artifact-url }}';
             const pagesUrl = '${{ steps.publish_pages.outputs.url }}';
             const reportUrl = pagesUrl || artifactUrl;
             const baseRef = '${{ github.event.pull_request.base.ref }}';
             const baseSha = '${{ github.event.pull_request.base.sha }}'.slice(0, 7);
             const headRef = '${{ github.event.pull_request.head.ref }}';
             const headSha = '${{ github.event.pull_request.head.sha }}'.slice(0, 7);
-            const hasDiff = '${{ steps.golden_report_summary.outputs.has_diff }}' === 'true';
+            const hasDiff = '${{ steps.vrt_report_summary.outputs.has_diff }}' === 'true';
             const status = hasDiff ? '差分あり' : '差分なし';
             const body = [
               marker,
@@ -195,7 +195,7 @@ jobs:
               `[差分画像を確認する](${reportUrl})`,
               '',
               `- **結果: ${status}**`,
-              `- 変更: ${{ steps.golden_report_summary.outputs.failed }}件 / 追加: ${{ steps.golden_report_summary.outputs.added }}件 / 削除: ${{ steps.golden_report_summary.outputs.deleted }}件 / 一致: ${{ steps.golden_report_summary.outputs.passed }}件`,
+              `- 変更: ${{ steps.vrt_report_summary.outputs.failed }}件 / 追加: ${{ steps.vrt_report_summary.outputs.added }}件 / 削除: ${{ steps.vrt_report_summary.outputs.deleted }}件 / 一致: ${{ steps.vrt_report_summary.outputs.passed }}件`,
               `- \`${baseRef}\` @ \`${baseSha}\` -> \`${headRef}\` @ \`${headSha}\``,
               '',
               `_run #${context.runNumber} で更新_`,

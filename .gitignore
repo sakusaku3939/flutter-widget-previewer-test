@@ -44,9 +44,9 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Alchemist local golden outputs
-test/**/goldens/goldens/**/*.*
-test/**/goldens/failures/**/*.*
+# Alchemist local VRT image outputs
+test/**/goldens/**/*.*
+test/**/failures/**/*.*
 
 # FVM Version Cache
 .fvm/

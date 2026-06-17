@@ -39,21 +39,21 @@ Previewer には各 `screens/{feature}/*_preview.dart` の個別 `@Preview` が�
 
 状態管理は `flutter_riverpod` の `NotifierProvider` を使い、各画面の `*_notifier.dart` に provider と notifier を置きます。
 
-## Golden Test
+## VRT
 
-Alchemist でレイアウト確認用の PreviewCase を Golden Test します。対象は `lib/src/presentation/previews/golden_previews.dart` の `goldenPreviews` に集約しています。
-
-```bash
-fvm flutter test test/goldens/previews_golden_test.dart
-```
-
-基準画像を更新する場合は次を実行します。
+Alchemist でレイアウト確認用の PreviewCase を Visual Regression Testing (VRT) します。対象は `lib/src/presentation/previews/vrt_previews.dart` の `visualRegressionPreviews` に集約しています。
 
 ```bash
-fvm flutter test test/goldens/previews_golden_test.dart --update-goldens
+fvm flutter test test/vrt/previews_vrt_test.dart
 ```
 
-OS別のローカル golden は無効化し、`goldens/ci` のみを検証します。
+VRT画像を再生成する場合は次を実行します。
+
+```bash
+fvm flutter test test/vrt/previews_vrt_test.dart --update-goldens
+```
+
+OS別のローカル画像は無効化し、AlchemistのCI用出力だけを使います。
 
 ## Android エミュレーター確認
 
@@ -88,13 +88,13 @@ fvm flutter analyze
 fvm flutter test
 ```
 
-## CI Golden Report
+## CI VRT Report
 
-GitHub Actions の `golden` workflow では、PRごとに base branch と head branch のCI golden画像を生成し、`reg-cli` でHTMLレポートを作成します。
+GitHub Actions の `vrt` workflow では、PRごとに base branch と head branch のVRT画像を生成し、`reg-cli` でHTMLレポートを作成します。
 
 - base: PRのbase branch（通常は `main`）
 - head: PR branch
-- 出力: `golden-reg-report-<run_id>` artifact
+- 出力: `vrt-report-<run_id>` artifact
 - PRコメント: 差分あり/なしに関係なく、同じbotコメントを更新
 
-通常のgolden検証も同じworkflow内で実行します。head branchで生成したgolden画像とコミット済みgolden画像が一致しない場合は、レポートとPRコメントを作成したうえでCIを失敗させます。
+HTMLレポートは `vrt/screenshot-reports` ブランチの `docs/vrt/pr-<number>/` に配置します。Actionsのレポート更新コミットには `[skip ci]` を付け、余計なCI起動を抑えます。

@@ -19,7 +19,7 @@ const resultSummaryAttentionMobileName = 'Attention mobile';
 
 PreviewCase get _resultSummaryInteractiveMobilePreviewCase {
   return PreviewCase(
-    goldenFileName: 'result_summary_interactive_mobile',
+    vrtFileName: 'result_summary_interactive_mobile',
     group: resultSummaryGroup,
     name: resultSummaryInteractiveMobileName,
     size: resultSummaryMobileSize,
@@ -42,7 +42,7 @@ Widget resultSummaryInteractiveMobilePreview() {
 PreviewCase get _resultSummaryInProgressMobilePreviewCase {
   return _resultSummaryPreviewCaseForStatus(
     status: ResultSummaryStatus.inProgress,
-    goldenFileName: 'result_summary_in_progress_mobile',
+    vrtFileName: 'result_summary_in_progress_mobile',
     name: resultSummaryInProgressMobileName,
     size: resultSummaryMobileSize,
   );
@@ -61,7 +61,7 @@ Widget resultSummaryInProgressMobilePreview() {
 PreviewCase get _resultSummaryCompletedMobilePreviewCase {
   return _resultSummaryPreviewCaseForStatus(
     status: ResultSummaryStatus.completed,
-    goldenFileName: 'result_summary_completed_mobile',
+    vrtFileName: 'result_summary_completed_mobile',
     name: resultSummaryCompletedMobileName,
     size: resultSummaryMobileSize,
   );
@@ -80,7 +80,7 @@ Widget resultSummaryCompletedMobilePreview() {
 PreviewCase get _resultSummaryAttentionMobilePreviewCase {
   return _resultSummaryPreviewCaseForStatus(
     status: ResultSummaryStatus.attention,
-    goldenFileName: 'result_summary_attention_mobile',
+    vrtFileName: 'result_summary_attention_mobile',
     name: resultSummaryAttentionMobileName,
     size: resultSummaryMobileSize,
   );
@@ -106,12 +106,12 @@ List<PreviewCase> get resultSummaryPreviewCases {
 
 PreviewCase _resultSummaryPreviewCaseForStatus({
   required ResultSummaryStatus status,
-  required String goldenFileName,
+  required String vrtFileName,
   required String name,
   required Size size,
 }) {
   return PreviewCase(
-    goldenFileName: goldenFileName,
+    vrtFileName: vrtFileName,
     group: resultSummaryGroup,
     name: name,
     size: size,
