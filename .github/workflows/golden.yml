@@ -15,6 +15,9 @@ permissions:
 jobs:
   golden:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy_pages.outputs.page_url }}
     env:
       GOLDEN_REPORT_DIR: /tmp/golden-reg-report
 
