@@ -59,8 +59,13 @@ jobs:
           rm -rf "$VRT_REPORT_DIR"
           mkdir -p "$VRT_REPORT_DIR/expected" "$VRT_REPORT_DIR/actual" "$VRT_REPORT_DIR/diff"
           flutter pub get
-          flutter test test/vrt/previews_vrt_test.dart --update-goldens
-          cp test/vrt/goldens/ci/*.png "$VRT_REPORT_DIR/expected/"
+          test_path="$(
+            find test -type f \( -name 'previews_vrt_test.dart' -o -name 'previews_golden_test.dart' \) |
+              sort |
+              head -n 1
+          )"
+          flutter test "$test_path" --update-goldens
+          find test -path '*/ci/*.png' -exec cp {} "$VRT_REPORT_DIR/expected/" \;
 
       - name: Checkout head ref
         if: github.event_name == 'pull_request'
@@ -79,8 +84,13 @@ jobs:
       - name: Generate head VRT screenshots
         if: github.event_name == 'pull_request'
         run: |
-          flutter test test/vrt/previews_vrt_test.dart --update-goldens
-          cp test/vrt/goldens/ci/*.png "$VRT_REPORT_DIR/actual/"
+          test_path="$(
+            find test -type f \( -name 'previews_vrt_test.dart' -o -name 'previews_golden_test.dart' \) |
+              sort |
+              head -n 1
+          )"
+          flutter test "$test_path" --update-goldens
+          find test -path '*/ci/*.png' -exec cp {} "$VRT_REPORT_DIR/actual/" \;
 
       - name: Generate VRT HTML report
         if: github.event_name == 'pull_request'
