@@ -103,6 +103,6 @@ GitHub Actions の `vrt` workflow では、PRごとに base branch と head bran
 - head: PR branch
 - 出力: `vrt-images-<run_id>` artifact
 - 差分ありの場合: 一時的な GitHub Release に `expected_*` / `actual_*` / `diff_*` 画像をアップロード
-- PRコメント: 同じbotコメントを更新し、同一リポジトリ内PRでは差分画像をインライン表示
+- PRコメント: 同じbotコメントを更新し、同一リポジトリ内PRでは before / after / diff 画像を表形式でインライン表示
 
 Release tag は `vrt-pr-<number>-<short_sha>` 形式です。PR close 時に同じPR番号の一時Releaseとtagを削除します。fork PRでは書き込み権限が制限されるため、Release作成とPRコメント更新は行わず、artifactで確認します。

@@ -251,7 +251,7 @@ jobs:
 
             const imageRows = [];
             if (assetBaseUrl && changedItems.length > 0) {
-              imageRows.push('| Case | Expected | Actual | Diff |');
+              imageRows.push('| Case | Before | After | Diff |');
               imageRows.push('| --- | --- | --- | --- |');
               for (const fileName of changedItems.slice(0, maxInlineItems)) {
                 imageRows.push([
@@ -263,24 +263,28 @@ jobs:
               }
               if (changedItems.length > maxInlineItems) {
                 imageRows.push(
-                  `| 他 ${changedItems.length - maxInlineItems} 件 | [Release assets](${releaseUrl}) | [artifact](${artifactUrl}) | |`,
+                  `| 他 ${changedItems.length - maxInlineItems} 件 | コメント上限のため省略 | [Release assets](${releaseUrl}) | [artifact](${artifactUrl}) |`,
                 );
               }
             }
+
+            const supplementalLinks = releaseUrl
+              ? `[Release assets](${releaseUrl}) / [artifact](${artifactUrl})`
+              : `[artifact](${artifactUrl})`;
 
             const body = [
               marker,
               '### スクリーンショット差分',
               '',
-              releaseUrl
-                ? `[Release assets](${releaseUrl}) / [artifact](${artifactUrl})`
-                : `[差分画像artifactを確認する](${artifactUrl})`,
-              '',
               `- **結果: ${status}**`,
               `- 変更: ${process.env.FAILED_COUNT}件 / 追加: ${process.env.ADDED_COUNT}件 / 削除: ${process.env.DELETED_COUNT}件 / 一致: ${process.env.PASSED_COUNT}件`,
               `- \`${baseRef}\` @ \`${baseSha}\` -> \`${headRef}\` @ \`${headSha}\``,
               '',
-              ...imageRows,
+              ...(imageRows.length > 0
+                ? imageRows
+                : ['差分画像はPRコメントへ埋め込めませんでした。artifactを確認してください。']),
+              '',
+              `<sub>補助リンク: ${supplementalLinks}</sub>`,
               '',
               `_run #${context.runNumber} で更新_`,
             ].join('\n');
