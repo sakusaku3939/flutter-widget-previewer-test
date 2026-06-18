@@ -36,11 +36,6 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
       - name: Install dependencies
         if: github.event_name != 'pull_request'
         run: flutter pub get
@@ -94,8 +89,7 @@ jobs:
 
       - name: Generate VRT diff report
         if: github.event_name == 'pull_request'
-        working-directory: ${{ env.VRT_REPORT_DIR }}
-        run: npx --yes reg-cli@0.18.16 actual expected diff -J reg.json -I
+        run: dart run tool/compare_vrt_images.dart "$VRT_REPORT_DIR/actual" "$VRT_REPORT_DIR/expected" "$VRT_REPORT_DIR/diff" -J "$VRT_REPORT_DIR/reg.json"
 
       - name: Summarize VRT report
         if: github.event_name == 'pull_request'
