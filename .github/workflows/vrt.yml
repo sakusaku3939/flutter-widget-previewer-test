@@ -2,6 +2,7 @@ name: vrt
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, closed]
   push:
     branches: [main]
 
@@ -12,11 +13,10 @@ permissions:
 
 jobs:
   vrt:
+    if: github.event_name != 'pull_request' || github.event.action != 'closed'
     runs-on: ubuntu-latest
     env:
       VRT_REPORT_DIR: /tmp/vrt-report
-      PAGES_BRANCH: vrt/screenshot-reports
-      PAGES_PATH: docs
 
     steps:
       - name: Checkout push ref
@@ -32,7 +32,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.44.2'
+          flutter-version: "3.44.2"
           channel: stable
           cache: true
 
@@ -92,10 +92,10 @@ jobs:
           flutter test "$test_path" --update-goldens
           find test -path '*/ci/*.png' -exec cp {} "$VRT_REPORT_DIR/actual/" \;
 
-      - name: Generate VRT HTML report
+      - name: Generate VRT diff report
         if: github.event_name == 'pull_request'
         working-directory: ${{ env.VRT_REPORT_DIR }}
-        run: npx --yes reg-cli@0.18.16 actual expected diff -J reg.json -R index.html -I
+        run: npx --yes reg-cli@0.18.16 actual expected diff -J reg.json -I
 
       - name: Summarize VRT report
         if: github.event_name == 'pull_request'
@@ -120,93 +120,167 @@ jobs:
           fs.appendFileSync(process.env.GITHUB_OUTPUT, `has_diff=${changed > 0}\n`);
           NODE
 
-      - name: Upload VRT HTML report
+      - name: Upload VRT images
         if: github.event_name == 'pull_request'
         id: vrt_report
         uses: actions/upload-artifact@v4
         with:
-          name: vrt-report-${{ github.run_id }}
+          name: vrt-images-${{ github.run_id }}
           path: ${{ env.VRT_REPORT_DIR }}
           if-no-files-found: error
           retention-days: 14
 
-      - name: Publish VRT report to GitHub Pages branch
-        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
-        id: publish_pages
+      - name: Publish VRT images to GitHub Release
+        if: >
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name == github.repository &&
+          steps.vrt_report_summary.outputs.has_diff == 'true'
+        id: release_assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          REPOSITORY: ${{ github.repository }}
         run: |
           set -euo pipefail
 
-          relative_report_path="vrt/pr-${{ github.event.pull_request.number }}"
-          publish_root="${RUNNER_TEMP}/pages-source"
-          mkdir -p "$publish_root"
+          short_sha="${HEAD_SHA:0:7}"
+          tag="vrt-pr-${PR_NUMBER}-${short_sha}"
+          release_title="VRT images for PR #${PR_NUMBER} ${short_sha}"
+          upload_dir="${RUNNER_TEMP}/vrt-release-assets"
 
-          if git ls-remote --exit-code --heads origin "$PAGES_BRANCH" >/dev/null 2>&1; then
-            git fetch origin "$PAGES_BRANCH" --depth=1
-            git worktree add "$publish_root" FETCH_HEAD
-          else
-            git worktree add --detach "$publish_root"
-            cd "$publish_root"
-            git switch --orphan "$PAGES_BRANCH"
-            git rm -rf . >/dev/null 2>&1 || true
-            cd -
+          rm -rf "$upload_dir"
+          mkdir -p "$upload_dir"
+
+          for kind in expected actual diff; do
+            if [ -d "$VRT_REPORT_DIR/$kind" ]; then
+              while IFS= read -r -d '' file; do
+                cp "$file" "$upload_dir/${kind}_$(basename "$file")"
+              done < <(find "$VRT_REPORT_DIR/$kind" -maxdepth 1 -type f -name '*.png' -print0)
+            fi
+          done
+
+          if ! gh release view "$tag" --repo "$REPOSITORY" >/dev/null 2>&1; then
+            gh release create "$tag" \
+              --repo "$REPOSITORY" \
+              --target "$HEAD_SHA" \
+              --title "$release_title" \
+              --notes "Temporary VRT image assets for PR #${PR_NUMBER}." \
+              --prerelease \
+              --latest=false
           fi
 
-          target_dir="$publish_root/$PAGES_PATH/$relative_report_path"
-          rm -rf "$target_dir"
-          mkdir -p "$target_dir"
-          touch "$publish_root/$PAGES_PATH/.nojekyll"
-          cp -R "$VRT_REPORT_DIR"/. "$target_dir"/
-
-          cd "$publish_root"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "$PAGES_PATH"
-          if ! git diff --cached --quiet; then
-            git commit -m "Update VRT report for PR #${{ github.event.pull_request.number }} [skip ci]"
-            git push origin "HEAD:$PAGES_BRANCH"
+          shopt -s nullglob
+          assets=("$upload_dir"/*.png)
+          if [ "${#assets[@]}" -gt 0 ]; then
+            gh release upload "$tag" "${assets[@]}" --repo "$REPOSITORY" --clobber
           fi
 
-          echo "url=https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/$relative_report_path/" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "url=https://github.com/${REPOSITORY}/releases/tag/${tag}" >> "$GITHUB_OUTPUT"
+          echo "asset_base_url=https://github.com/${REPOSITORY}/releases/download/${tag}" >> "$GITHUB_OUTPUT"
 
       - name: Add VRT report summary
         if: github.event_name == 'pull_request'
         run: |
           echo "### スクリーンショット差分" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "[差分画像を確認する](${{ steps.publish_pages.outputs.url || steps.vrt_report.outputs.artifact-url }})" >> "$GITHUB_STEP_SUMMARY"
+          echo "[差分画像artifactを確認する](${{ steps.vrt_report.outputs.artifact-url }})" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           if [ "${{ steps.vrt_report_summary.outputs.has_diff }}" = "true" ]; then
             echo "- **結果: 差分あり**" >> "$GITHUB_STEP_SUMMARY"
           else
             echo "- **結果: 差分なし**" >> "$GITHUB_STEP_SUMMARY"
           fi
+          if [ -n "${{ steps.release_assets.outputs.url }}" ]; then
+            echo "- Release assets: ${{ steps.release_assets.outputs.url }}" >> "$GITHUB_STEP_SUMMARY"
+          fi
           echo "- 変更: ${{ steps.vrt_report_summary.outputs.failed }}件 / 追加: ${{ steps.vrt_report_summary.outputs.added }}件 / 削除: ${{ steps.vrt_report_summary.outputs.deleted }}件 / 一致: ${{ steps.vrt_report_summary.outputs.passed }}件" >> "$GITHUB_STEP_SUMMARY"
           echo "- \`${{ github.event.pull_request.base.ref }}\` @ \`${{ github.event.pull_request.base.sha }}\` -> \`${{ github.event.pull_request.head.ref }}\` @ \`${{ github.event.pull_request.head.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upsert VRT report PR comment
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         uses: actions/github-script@v8
+        env:
+          VRT_REPORT_DIR: ${{ env.VRT_REPORT_DIR }}
+          ARTIFACT_URL: ${{ steps.vrt_report.outputs.artifact-url }}
+          RELEASE_URL: ${{ steps.release_assets.outputs.url }}
+          ASSET_BASE_URL: ${{ steps.release_assets.outputs.asset_base_url }}
+          HAS_DIFF: ${{ steps.vrt_report_summary.outputs.has_diff }}
+          FAILED_COUNT: ${{ steps.vrt_report_summary.outputs.failed }}
+          ADDED_COUNT: ${{ steps.vrt_report_summary.outputs.added }}
+          DELETED_COUNT: ${{ steps.vrt_report_summary.outputs.deleted }}
+          PASSED_COUNT: ${{ steps.vrt_report_summary.outputs.passed }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         with:
           script: |
+            const fs = require('fs');
+            const path = require('path');
+
             const marker = '<!-- vrt-report -->';
-            const artifactUrl = '${{ steps.vrt_report.outputs.artifact-url }}';
-            const pagesUrl = '${{ steps.publish_pages.outputs.url }}';
-            const reportUrl = pagesUrl || artifactUrl;
-            const baseRef = '${{ github.event.pull_request.base.ref }}';
-            const baseSha = '${{ github.event.pull_request.base.sha }}'.slice(0, 7);
-            const headRef = '${{ github.event.pull_request.head.ref }}';
-            const headSha = '${{ github.event.pull_request.head.sha }}'.slice(0, 7);
-            const hasDiff = '${{ steps.vrt_report_summary.outputs.has_diff }}' === 'true';
+            const artifactUrl = process.env.ARTIFACT_URL;
+            const releaseUrl = process.env.RELEASE_URL;
+            const assetBaseUrl = process.env.ASSET_BASE_URL;
+            const baseRef = process.env.BASE_REF;
+            const baseSha = process.env.BASE_SHA.slice(0, 7);
+            const headRef = process.env.HEAD_REF;
+            const headSha = process.env.HEAD_SHA.slice(0, 7);
+            const hasDiff = process.env.HAS_DIFF === 'true';
             const status = hasDiff ? '差分あり' : '差分なし';
+
+            const reportPath = path.join(process.env.VRT_REPORT_DIR, 'reg.json');
+            const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+            const changedItems = [
+              ...(report.failedItems || []),
+              ...(report.newItems || []),
+              ...(report.deletedItems || []),
+            ];
+            const maxInlineItems = 12;
+
+            function assetImage(kind, fileName, width = 220) {
+              if (!assetBaseUrl) return '-';
+              const localPath = path.join(process.env.VRT_REPORT_DIR, kind, fileName);
+              if (!fs.existsSync(localPath)) return '-';
+              const assetName = `${kind}_${fileName}`;
+              const url = `${assetBaseUrl}/${encodeURIComponent(assetName)}`;
+              return `<img src="${url}" alt="${kind} ${fileName}" width="${width}">`;
+            }
+
+            const imageRows = [];
+            if (assetBaseUrl && changedItems.length > 0) {
+              imageRows.push('| Case | Expected | Actual | Diff |');
+              imageRows.push('| --- | --- | --- | --- |');
+              for (const fileName of changedItems.slice(0, maxInlineItems)) {
+                imageRows.push([
+                  `\`${fileName}\``,
+                  assetImage('expected', fileName),
+                  assetImage('actual', fileName),
+                  assetImage('diff', fileName),
+                ].join(' | '));
+              }
+              if (changedItems.length > maxInlineItems) {
+                imageRows.push(
+                  `| 他 ${changedItems.length - maxInlineItems} 件 | [Release assets](${releaseUrl}) | [artifact](${artifactUrl}) | |`,
+                );
+              }
+            }
+
             const body = [
               marker,
               '### スクリーンショット差分',
               '',
-              `[差分画像を確認する](${reportUrl})`,
+              releaseUrl
+                ? `[Release assets](${releaseUrl}) / [artifact](${artifactUrl})`
+                : `[差分画像artifactを確認する](${artifactUrl})`,
               '',
               `- **結果: ${status}**`,
-              `- 変更: ${{ steps.vrt_report_summary.outputs.failed }}件 / 追加: ${{ steps.vrt_report_summary.outputs.added }}件 / 削除: ${{ steps.vrt_report_summary.outputs.deleted }}件 / 一致: ${{ steps.vrt_report_summary.outputs.passed }}件`,
+              `- 変更: ${process.env.FAILED_COUNT}件 / 追加: ${process.env.ADDED_COUNT}件 / 削除: ${process.env.DELETED_COUNT}件 / 一致: ${process.env.PASSED_COUNT}件`,
               `- \`${baseRef}\` @ \`${baseSha}\` -> \`${headRef}\` @ \`${headSha}\``,
+              '',
+              ...imageRows,
               '',
               `_run #${context.runNumber} で更新_`,
             ].join('\n');
@@ -236,3 +310,28 @@ jobs:
                 body,
               });
             }
+
+  cleanup-vrt-releases:
+    if: >
+      github.event_name == 'pull_request' &&
+      github.event.action == 'closed' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete temporary VRT releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          prefix="vrt-pr-${PR_NUMBER}-"
+          gh release list \
+            --repo "$REPOSITORY" \
+            --limit 100 \
+            --json tagName \
+            --jq ".[] | select(.tagName | startswith(\"$prefix\")) | .tagName" |
+          while IFS= read -r tag; do
+            gh release delete "$tag" --repo "$REPOSITORY" --cleanup-tag --yes
+          done
