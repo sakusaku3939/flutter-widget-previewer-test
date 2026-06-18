@@ -268,10 +268,6 @@ jobs:
               }
             }
 
-            const supplementalLinks = releaseUrl
-              ? `[Release assets](${releaseUrl}) / [artifact](${artifactUrl})`
-              : `[artifact](${artifactUrl})`;
-
             const body = [
               marker,
               '### スクリーンショット差分',
@@ -282,9 +278,7 @@ jobs:
               '',
               ...(imageRows.length > 0
                 ? imageRows
-                : ['差分画像はPRコメントへ埋め込めませんでした。artifactを確認してください。']),
-              '',
-              `<sub>補助リンク: ${supplementalLinks}</sub>`,
+                : ['差分画像はPRコメントへ埋め込めませんでした。']),
               '',
               `_run #${context.runNumber} で更新_`,
             ].join('\n');
