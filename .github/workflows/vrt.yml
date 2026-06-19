@@ -197,8 +197,6 @@ jobs:
         uses: actions/github-script@v8
         env:
           VRT_REPORT_DIR: ${{ env.VRT_REPORT_DIR }}
-          ARTIFACT_URL: ${{ steps.vrt_report.outputs.artifact-url }}
-          RELEASE_URL: ${{ steps.release_assets.outputs.url }}
           ASSET_BASE_URL: ${{ steps.release_assets.outputs.asset_base_url }}
           HAS_DIFF: ${{ steps.vrt_report_summary.outputs.has_diff }}
           FAILED_COUNT: ${{ steps.vrt_report_summary.outputs.failed }}
@@ -215,8 +213,6 @@ jobs:
             const path = require('path');
 
             const marker = '<!-- vrt-report -->';
-            const artifactUrl = process.env.ARTIFACT_URL;
-            const releaseUrl = process.env.RELEASE_URL;
             const assetBaseUrl = process.env.ASSET_BASE_URL;
             const baseRef = process.env.BASE_REF;
             const baseSha = process.env.BASE_SHA.slice(0, 7);
@@ -243,21 +239,24 @@ jobs:
               return `<img src="${url}" alt="${kind} ${fileName}" width="${width}">`;
             }
 
-            const imageRows = [];
+            const imageSections = [];
             if (assetBaseUrl && changedItems.length > 0) {
-              imageRows.push('| Case | Before | After | Diff |');
-              imageRows.push('| --- | --- | --- | --- |');
               for (const fileName of changedItems.slice(0, maxInlineItems)) {
-                imageRows.push([
-                  `\`${fileName}\``,
-                  assetImage('expected', fileName),
-                  assetImage('actual', fileName),
-                  assetImage('diff', fileName),
-                ].join(' | '));
+                imageSections.push(`#### \`${fileName}\``);
+                imageSections.push('| Before | After | Diff |');
+                imageSections.push('| --- | --- | --- |');
+                imageSections.push(
+                  [
+                    assetImage('expected', fileName),
+                    assetImage('actual', fileName),
+                    assetImage('diff', fileName),
+                  ].join(' | '),
+                );
+                imageSections.push('');
               }
               if (changedItems.length > maxInlineItems) {
-                imageRows.push(
-                  `| 他 ${changedItems.length - maxInlineItems} 件 | コメント上限のため省略 | [Release assets](${releaseUrl}) | [artifact](${artifactUrl}) |`,
+                imageSections.push(
+                  `他 ${changedItems.length - maxInlineItems} 件はコメント上限のため省略しました。`,
                 );
               }
             }
@@ -270,8 +269,8 @@ jobs:
               `- 変更: ${process.env.FAILED_COUNT}件 / 追加: ${process.env.ADDED_COUNT}件 / 削除: ${process.env.DELETED_COUNT}件 / 一致: ${process.env.PASSED_COUNT}件`,
               `- \`${baseRef}\` @ \`${baseSha}\` -> \`${headRef}\` @ \`${headSha}\``,
               '',
-              ...(imageRows.length > 0
-                ? imageRows
+              ...(imageSections.length > 0
+                ? imageSections
                 : ['差分画像はPRコメントへ埋め込めませんでした。']),
               '',
               `_run #${context.runNumber} で更新_`,
