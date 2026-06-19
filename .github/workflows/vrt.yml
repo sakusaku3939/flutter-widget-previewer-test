@@ -242,7 +242,7 @@ jobs:
             const imageSections = [];
             if (assetBaseUrl && changedItems.length > 0) {
               for (const fileName of changedItems.slice(0, maxInlineItems)) {
-                imageSections.push(`#### \`${fileName}\``);
+                imageSections.push(`##### \`${fileName}\``);
                 imageSections.push('| Before | After | Diff |');
                 imageSections.push('| --- | --- | --- |');
                 imageSections.push(
