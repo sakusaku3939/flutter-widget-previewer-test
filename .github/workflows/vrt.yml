@@ -21,11 +21,11 @@ jobs:
       VRT_ASSETS_ROOT: vrt
 
     steps:
-      - name: Checkout push ref
+      - name: Checkout push commit
         if: github.event_name != 'pull_request'
         uses: actions/checkout@v4
 
-      - name: Checkout base ref
+      - name: Checkout PR base commit
         if: github.event_name == 'pull_request'
         uses: actions/checkout@v4
         with:
@@ -38,64 +38,67 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Install dependencies
+      - name: Install push dependencies
         if: github.event_name != 'pull_request'
         run: flutter pub get
 
-      - name: Verify generated VRT previews
+      - name: Verify generated VRT manifest on push
         if: github.event_name != 'pull_request'
         run: |
           dart run build_runner build --delete-conflicting-outputs
           git diff --exit-code lib/src/presentation/previews/vrt_previews.g.dart
 
-      - name: Analyze
+      - name: Analyze push commit
         if: github.event_name != 'pull_request'
         run: flutter analyze
 
-      - name: Generate screenshots
+      - name: Generate push VRT screenshots
         if: github.event_name != 'pull_request'
         run: flutter test test/vrt/previews_vrt_test.dart --update-goldens
 
-      - name: Generate base VRT screenshots
+      - name: Install PR base dependencies
+        if: github.event_name == 'pull_request'
+        run: flutter pub get
+
+      - name: Generate PR base VRT screenshots
         if: github.event_name == 'pull_request'
         run: |
           rm -rf "$VRT_REPORT_DIR"
-          mkdir -p "$VRT_REPORT_DIR/expected" "$VRT_REPORT_DIR/actual" "$VRT_REPORT_DIR/diff"
-          flutter pub get
+          mkdir -p "$VRT_REPORT_DIR/base" "$VRT_REPORT_DIR/head" "$VRT_REPORT_DIR/diff"
           flutter test test/vrt/previews_vrt_test.dart --update-goldens
-          find test -path '*/ci/*.png' -exec cp {} "$VRT_REPORT_DIR/expected/" \;
+          find test -path '*/ci/*.png' -exec cp {} "$VRT_REPORT_DIR/base/" \;
 
-      - name: Checkout head ref
+      - name: Checkout PR head commit
         if: github.event_name == 'pull_request'
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - name: Install head dependencies
+      - name: Install PR head dependencies
         if: github.event_name == 'pull_request'
         run: flutter pub get
 
-      - name: Verify generated head VRT previews
+      - name: Verify generated VRT manifest on PR head
         if: github.event_name == 'pull_request'
         run: |
           dart run build_runner build --delete-conflicting-outputs
           git diff --exit-code lib/src/presentation/previews/vrt_previews.g.dart
 
-      - name: Analyze head
+      - name: Analyze PR head
         if: github.event_name == 'pull_request'
         run: flutter analyze
 
-      - name: Generate head VRT screenshots
+      - name: Generate PR head VRT screenshots
         if: github.event_name == 'pull_request'
         run: |
           flutter test test/vrt/previews_vrt_test.dart --update-goldens
-          find test -path '*/ci/*.png' -exec cp {} "$VRT_REPORT_DIR/actual/" \;
+          find test -path '*/ci/*.png' -exec cp {} "$VRT_REPORT_DIR/head/" \;
 
-      - name: Generate VRT diff report
+      - name: Compare PR base and head VRT screenshots
         if: github.event_name == 'pull_request'
-        run: dart run tool/compare_vrt_images.dart "$VRT_REPORT_DIR/actual" "$VRT_REPORT_DIR/expected" "$VRT_REPORT_DIR/diff" -J "$VRT_REPORT_DIR/reg.json"
+        run: dart run tool/compare_vrt_images.dart "$VRT_REPORT_DIR/head" "$VRT_REPORT_DIR/base" "$VRT_REPORT_DIR/diff" -J "$VRT_REPORT_DIR/reg.json"
 
-      - name: Summarize VRT report
+      - name: Collect VRT comparison counts
         if: github.event_name == 'pull_request'
         id: vrt_report_summary
         run: |
@@ -118,7 +121,7 @@ jobs:
           fs.appendFileSync(process.env.GITHUB_OUTPUT, `has_diff=${changed > 0}\n`);
           NODE
 
-      - name: Upload VRT images
+      - name: Upload VRT report artifact
         if: github.event_name == 'pull_request'
         id: vrt_report
         uses: actions/upload-artifact@v4
@@ -128,7 +131,7 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      - name: Publish VRT images to branch
+      - name: Publish inline VRT assets
         if: >
           github.event_name == 'pull_request' &&
           github.event.pull_request.head.repo.full_name == github.repository &&
@@ -162,7 +165,7 @@ jobs:
           rm -rf "$target_dir"
           mkdir -p "$target_dir"
 
-          for kind in expected actual diff; do
+          for kind in base head diff; do
             if [ -d "$VRT_REPORT_DIR/$kind" ]; then
               while IFS= read -r -d '' file; do
                 cp "$file" "$target_dir/${kind}_$(basename "$file")"
@@ -183,7 +186,7 @@ jobs:
           echo "url=https://github.com/${REPOSITORY}/tree/${VRT_ASSETS_BRANCH}/${VRT_ASSETS_ROOT}/${relative_path}" >> "$GITHUB_OUTPUT"
           echo "asset_base_url=https://raw.githubusercontent.com/${REPOSITORY}/refs/heads/${VRT_ASSETS_BRANCH}/${VRT_ASSETS_ROOT}/${relative_path}" >> "$GITHUB_OUTPUT"
 
-      - name: Add VRT report summary
+      - name: Add VRT workflow summary
         if: github.event_name == 'pull_request'
         run: |
           echo "### スクリーンショット差分" >> "$GITHUB_STEP_SUMMARY"
@@ -201,7 +204,7 @@ jobs:
           echo "- 変更: ${{ steps.vrt_report_summary.outputs.failed }}件 / 追加: ${{ steps.vrt_report_summary.outputs.added }}件 / 削除: ${{ steps.vrt_report_summary.outputs.deleted }}件 / 一致: ${{ steps.vrt_report_summary.outputs.passed }}件" >> "$GITHUB_STEP_SUMMARY"
           echo "- \`${{ github.event.pull_request.base.ref }}\` @ \`${{ github.event.pull_request.base.sha }}\` -> \`${{ github.event.pull_request.head.ref }}\` @ \`${{ github.event.pull_request.head.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Upsert VRT report PR comment
+      - name: Upsert VRT PR comment
         if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         uses: actions/github-script@v8
         env:
@@ -264,12 +267,12 @@ jobs:
 
             function beforeCell(fileName) {
               if (newItemSet.has(fileName)) return textCell('No baseline');
-              return imageCell(assetImage('expected', fileName));
+              return imageCell(assetImage('base', fileName));
             }
 
             function afterCell(fileName) {
               if (deletedItemSet.has(fileName)) return textCell('Removed');
-              return imageCell(assetImage('actual', fileName));
+              return imageCell(assetImage('head', fileName));
             }
 
             function diffCell(fileName) {
@@ -282,8 +285,8 @@ jobs:
                 '<table>',
                 '  <thead>',
                 '    <tr>',
-                `      <th width="${imageWidth}">Before</th>`,
-                `      <th width="${imageWidth}">After</th>`,
+                `      <th width="${imageWidth}">Base</th>`,
+                `      <th width="${imageWidth}">Head</th>`,
                 `      <th width="${imageWidth}">Diff</th>`,
                 '    </tr>',
                 '  </thead>',

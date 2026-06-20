@@ -6,22 +6,21 @@ import 'package:image/image.dart' as image;
 void main(List<String> args) {
   final options = _Options.parse(args);
 
-  final actualDir = Directory(options.actualDir);
-  final expectedDir = Directory(options.expectedDir);
+  final headDir = Directory(options.headDir);
+  final baseDir = Directory(options.baseDir);
   final diffDir = Directory(options.diffDir);
 
-  _requireDirectory(actualDir, 'actual');
-  _requireDirectory(expectedDir, 'expected');
+  _requireDirectory(headDir, 'head');
+  _requireDirectory(baseDir, 'base');
 
   if (diffDir.existsSync()) {
     diffDir.deleteSync(recursive: true);
   }
   diffDir.createSync(recursive: true);
 
-  final actualFiles = _pngFilesByName(actualDir);
-  final expectedFiles = _pngFilesByName(expectedDir);
-  final allNames = {...actualFiles.keys, ...expectedFiles.keys}.toList()
-    ..sort();
+  final headFiles = _pngFilesByName(headDir);
+  final baseFiles = _pngFilesByName(baseDir);
+  final allNames = {...headFiles.keys, ...baseFiles.keys}.toList()..sort();
 
   final failedItems = <String>[];
   final newItems = <String>[];
@@ -29,22 +28,22 @@ void main(List<String> args) {
   final passedItems = <String>[];
 
   for (final name in allNames) {
-    final actualFile = actualFiles[name];
-    final expectedFile = expectedFiles[name];
+    final headFile = headFiles[name];
+    final baseFile = baseFiles[name];
 
-    if (actualFile == null) {
+    if (headFile == null) {
       deletedItems.add(name);
       continue;
     }
 
-    if (expectedFile == null) {
+    if (baseFile == null) {
       newItems.add(name);
       continue;
     }
 
-    final actual = _decodePng(actualFile);
-    final expected = _decodePng(expectedFile);
-    final comparison = _compareImages(actual: actual, expected: expected);
+    final head = _decodePng(headFile);
+    final base = _decodePng(baseFile);
+    final comparison = _compareImages(head: head, base: base);
 
     if (comparison.isMatch) {
       passedItems.add(name);
@@ -62,11 +61,11 @@ void main(List<String> args) {
     'newItems': newItems,
     'deletedItems': deletedItems,
     'passedItems': passedItems,
-    'expectedItems': expectedFiles.keys.toList()..sort(),
-    'actualItems': actualFiles.keys.toList()..sort(),
+    'baseItems': baseFiles.keys.toList()..sort(),
+    'headItems': headFiles.keys.toList()..sort(),
     'diffItems': failedItems,
-    'actualDir': './${actualDir.path.split(RegExp(r'[\\/]')).last}',
-    'expectedDir': './${expectedDir.path.split(RegExp(r'[\\/]')).last}',
+    'headDir': './${headDir.path.split(RegExp(r'[\\/]')).last}',
+    'baseDir': './${baseDir.path.split(RegExp(r'[\\/]')).last}',
     'diffDir': './${diffDir.path.split(RegExp(r'[\\/]')).last}',
   };
 
@@ -106,43 +105,41 @@ image.Image _decodePng(File file) {
 }
 
 _ImageComparison _compareImages({
-  required image.Image actual,
-  required image.Image expected,
+  required image.Image head,
+  required image.Image base,
 }) {
-  final width = actual.width > expected.width ? actual.width : expected.width;
-  final height = actual.height > expected.height
-      ? actual.height
-      : expected.height;
+  final width = head.width > base.width ? head.width : base.width;
+  final height = head.height > base.height ? head.height : base.height;
   final diff = image.Image(width: width, height: height);
   var changedPixels = 0;
 
   for (var y = 0; y < height; y++) {
     for (var x = 0; x < width; x++) {
-      final hasActual = x < actual.width && y < actual.height;
-      final hasExpected = x < expected.width && y < expected.height;
+      final hasHead = x < head.width && y < head.height;
+      final hasBase = x < base.width && y < base.height;
 
-      if (!hasActual || !hasExpected) {
+      if (!hasHead || !hasBase) {
         changedPixels++;
         diff.setPixelRgba(x, y, 255, 0, 255, 255);
         continue;
       }
 
-      final actualPixel = actual.getPixel(x, y);
-      final expectedPixel = expected.getPixel(x, y);
+      final headPixel = head.getPixel(x, y);
+      final basePixel = base.getPixel(x, y);
       final matches =
-          actualPixel.r == expectedPixel.r &&
-          actualPixel.g == expectedPixel.g &&
-          actualPixel.b == expectedPixel.b &&
-          actualPixel.a == expectedPixel.a;
+          headPixel.r == basePixel.r &&
+          headPixel.g == basePixel.g &&
+          headPixel.b == basePixel.b &&
+          headPixel.a == basePixel.a;
 
       if (matches) {
         diff.setPixelRgba(
           x,
           y,
-          actualPixel.r,
-          actualPixel.g,
-          actualPixel.b,
-          actualPixel.a,
+          headPixel.r,
+          headPixel.g,
+          headPixel.b,
+          headPixel.a,
         );
       } else {
         changedPixels++;
@@ -170,8 +167,8 @@ class _ImageComparison {
 
 class _Options {
   const _Options({
-    required this.actualDir,
-    required this.expectedDir,
+    required this.headDir,
+    required this.baseDir,
     required this.diffDir,
     required this.jsonPath,
   });
@@ -206,15 +203,15 @@ class _Options {
     }
 
     return _Options(
-      actualDir: positional[0],
-      expectedDir: positional[1],
+      headDir: positional[0],
+      baseDir: positional[1],
       diffDir: positional[2],
       jsonPath: jsonPath,
     );
   }
 
-  final String actualDir;
-  final String expectedDir;
+  final String headDir;
+  final String baseDir;
   final String diffDir;
   final String jsonPath;
 }
@@ -231,7 +228,7 @@ String _readValue(List<String> args, int index, String option) {
 void _printUsage() {
   stdout.writeln('''
 Usage:
-  dart run tool/compare_vrt_images.dart <actual-dir> <expected-dir> <diff-dir> [options]
+  dart run tool/compare_vrt_images.dart <head-dir> <base-dir> <diff-dir> [options]
 
 Options:
   -J, --json <path>  JSON report path. Default: reg.json
