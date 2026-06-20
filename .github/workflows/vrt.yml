@@ -186,21 +186,6 @@ jobs:
           echo "url=https://github.com/${REPOSITORY}/tree/${VRT_ASSETS_BRANCH}/${VRT_ASSETS_ROOT}/${relative_path}" >> "$GITHUB_OUTPUT"
           echo "asset_base_url=https://raw.githubusercontent.com/${REPOSITORY}/refs/heads/${VRT_ASSETS_BRANCH}/${VRT_ASSETS_ROOT}/${relative_path}" >> "$GITHUB_OUTPUT"
 
-      - name: Add VRT workflow summary
-        run: |
-          echo "### スクリーンショット差分" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          if [ "${{ steps.vrt_report_summary.outputs.has_diff }}" = "true" ]; then
-            echo "- **結果: 差分あり**" >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "- **結果: 差分なし**" >> "$GITHUB_STEP_SUMMARY"
-          fi
-          if [ -n "${{ steps.publish_vrt_assets.outputs.url }}" ]; then
-            echo "- VRT assets: ${{ steps.publish_vrt_assets.outputs.url }}" >> "$GITHUB_STEP_SUMMARY"
-          fi
-          echo "- 変更: ${{ steps.vrt_report_summary.outputs.failed }}件 / 追加: ${{ steps.vrt_report_summary.outputs.added }}件 / 削除: ${{ steps.vrt_report_summary.outputs.deleted }}件 / 一致: ${{ steps.vrt_report_summary.outputs.passed }}件" >> "$GITHUB_STEP_SUMMARY"
-          echo "- \`${{ github.event.pull_request.base.ref }}\` @ \`${{ github.event.pull_request.base.sha }}\` -> \`${{ github.event.pull_request.head.ref }}\` @ \`${{ github.event.pull_request.head.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
-
       - name: Upsert VRT PR comment
         uses: actions/github-script@v8
         env:
