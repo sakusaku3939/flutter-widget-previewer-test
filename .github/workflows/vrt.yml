@@ -241,8 +241,17 @@ jobs:
             const newItemSet = new Set(newItems);
             const deletedItemSet = new Set(deletedItems);
             const maxInlineItems = 12;
+            const imageWidth = 220;
 
-            function assetImage(kind, fileName, width = 220, fallback = 'N/A') {
+            function textCell(text) {
+              return `<td width="${imageWidth}" align="center">${text}</td>`;
+            }
+
+            function imageCell(content) {
+              return `<td width="${imageWidth}" align="center">${content}</td>`;
+            }
+
+            function assetImage(kind, fileName, width = imageWidth, fallback = 'N/A') {
               if (!assetBaseUrl) return fallback;
               const localPath = path.join(process.env.VRT_REPORT_DIR, kind, fileName);
               if (!fs.existsSync(localPath)) return fallback;
@@ -252,33 +261,46 @@ jobs:
             }
 
             function beforeCell(fileName) {
-              if (newItemSet.has(fileName)) return 'No baseline';
-              return assetImage('expected', fileName);
+              if (newItemSet.has(fileName)) return textCell('No baseline');
+              return imageCell(assetImage('expected', fileName));
             }
 
             function afterCell(fileName) {
-              if (deletedItemSet.has(fileName)) return 'Removed';
-              return assetImage('actual', fileName);
+              if (deletedItemSet.has(fileName)) return textCell('Removed');
+              return imageCell(assetImage('actual', fileName));
             }
 
             function diffCell(fileName) {
-              if (newItemSet.has(fileName) || deletedItemSet.has(fileName)) return 'N/A';
-              return assetImage('diff', fileName);
+              if (newItemSet.has(fileName) || deletedItemSet.has(fileName)) return textCell('N/A');
+              return imageCell(assetImage('diff', fileName));
+            }
+
+            function imageTable(fileName) {
+              return [
+                '<table>',
+                '  <thead>',
+                '    <tr>',
+                `      <th width="${imageWidth}">Before</th>`,
+                `      <th width="${imageWidth}">After</th>`,
+                `      <th width="${imageWidth}">Diff</th>`,
+                '    </tr>',
+                '  </thead>',
+                '  <tbody>',
+                '    <tr>',
+                `      ${beforeCell(fileName)}`,
+                `      ${afterCell(fileName)}`,
+                `      ${diffCell(fileName)}`,
+                '    </tr>',
+                '  </tbody>',
+                '</table>',
+              ].join('\n');
             }
 
             const imageSections = [];
             if (assetBaseUrl && changedItems.length > 0) {
               for (const fileName of changedItems.slice(0, maxInlineItems)) {
                 imageSections.push(`##### \`${fileName}\``);
-                imageSections.push('| Before | After | Diff |');
-                imageSections.push('| --- | --- | --- |');
-                imageSections.push(
-                  `| ${[
-                    beforeCell(fileName),
-                    afterCell(fileName),
-                    diffCell(fileName),
-                  ].join(' | ')} |`,
-                );
+                imageSections.push(imageTable(fileName));
                 imageSections.push('');
               }
               if (changedItems.length > maxInlineItems) {
