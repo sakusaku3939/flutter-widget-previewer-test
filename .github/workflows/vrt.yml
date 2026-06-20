@@ -13,7 +13,6 @@ permissions:
 
 jobs:
   vrt:
-    if: github.event_name != 'pull_request' || github.event.action != 'closed'
     runs-on: ubuntu-latest
     env:
       VRT_REPORT_DIR: /tmp/vrt-report
@@ -124,7 +123,6 @@ jobs:
       - name: Publish inline VRT assets
         if: >
           github.event_name == 'pull_request' &&
-          github.event.pull_request.head.repo.full_name == github.repository &&
           steps.vrt_report_summary.outputs.has_diff == 'true'
         id: publish_vrt_assets
         env:
@@ -193,7 +191,7 @@ jobs:
           echo "- \`${{ github.event.pull_request.base.ref }}\` @ \`${{ github.event.pull_request.base.sha }}\` -> \`${{ github.event.pull_request.head.ref }}\` @ \`${{ github.event.pull_request.head.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upsert VRT PR comment
-        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        if: github.event_name == 'pull_request'
         uses: actions/github-script@v8
         env:
           VRT_REPORT_DIR: ${{ env.VRT_REPORT_DIR }}
@@ -290,7 +288,11 @@ jobs:
             }
 
             const imageSections = [];
-            if (assetBaseUrl && changedItems.length > 0) {
+            if (!hasDiff) {
+              imageSections.push('差分画像はありません。');
+            } else if (!assetBaseUrl) {
+              imageSections.push('差分画像はPRコメントへ埋め込めませんでした。');
+            } else {
               for (const fileName of changedItems.slice(0, maxInlineItems)) {
                 imageSections.push(`##### \`${fileName}\``);
                 imageSections.push(imageTable(fileName));
@@ -311,9 +313,7 @@ jobs:
               `- 変更: ${process.env.FAILED_COUNT}件 / 追加: ${process.env.ADDED_COUNT}件 / 削除: ${process.env.DELETED_COUNT}件 / 一致: ${process.env.PASSED_COUNT}件`,
               `- \`${baseRef}\` @ \`${baseSha}\` -> \`${headRef}\` @ \`${headSha}\``,
               '',
-              ...(imageSections.length > 0
-                ? imageSections
-                : ['差分画像はPRコメントへ埋め込めませんでした。']),
+              ...imageSections,
               '',
               `_run #${context.runNumber} で更新_`,
             ].join('\n');
