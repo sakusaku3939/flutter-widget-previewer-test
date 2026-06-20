@@ -52,7 +52,3 @@ PreviewCase get _previewGalleryTabletPreviewCase {
 Widget previewGalleryTabletPreview() {
   return PreviewSurface(previewCase: _previewGalleryTabletPreviewCase);
 }
-
-List<PreviewCase> get previewGalleryPreviewCases {
-  return [_previewGalleryMobilePreviewCase, _previewGalleryTabletPreviewCase];
-}

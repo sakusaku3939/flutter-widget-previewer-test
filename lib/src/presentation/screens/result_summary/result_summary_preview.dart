@@ -96,14 +96,6 @@ Widget resultSummaryAttentionMobilePreview() {
   return PreviewSurface(previewCase: _resultSummaryAttentionMobilePreviewCase);
 }
 
-List<PreviewCase> get resultSummaryPreviewCases {
-  return [
-    _resultSummaryInProgressMobilePreviewCase,
-    _resultSummaryCompletedMobilePreviewCase,
-    _resultSummaryAttentionMobilePreviewCase,
-  ];
-}
-
 PreviewCase _resultSummaryPreviewCaseForStatus({
   required ResultSummaryStatus status,
   required String vrtFileName,
@@ -115,11 +107,12 @@ PreviewCase _resultSummaryPreviewCaseForStatus({
     group: resultSummaryGroup,
     name: name,
     size: size,
-    builder: (_) => ResultSummaryContent(
-      state: ResultSummaryState(status: status),
-      onStatusChanged: (_) {},
-      onPressed: () {},
-    ),
+    builder:
+        (_) => ResultSummaryContent(
+          state: ResultSummaryState(status: status),
+          onStatusChanged: (_) {},
+          onPressed: () {},
+        ),
   );
 }
 

@@ -30,7 +30,3 @@ PreviewCase get _homeMobilePreviewCase {
 Widget homeMobilePreview() {
   return PreviewSurface(previewCase: _homeMobilePreviewCase);
 }
-
-List<PreviewCase> get homePreviewCases {
-  return [_homeMobilePreviewCase];
-}

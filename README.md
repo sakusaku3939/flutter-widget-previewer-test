@@ -35,13 +35,19 @@ Previewer には各 `screens/{feature}/*_preview.dart` の個別 `@Preview` が�
 - `PreviewGallery`: mobile / tablet
 - `ResultSummary`: interactive mobile / 状態別 mobile。`ResultSummaryNotifier` で表示状態を切り替える状態管理の例です。
 
-表示する状態と `@Preview` adapter は各画面の `screens/{feature}/` 配下へ置きます。普段の UI 開発では画面単位の PreviewCase と `@Preview` を追加します。部品単位の `@Preview` は作らず、Previewer の group も画面単位で分けます。
+表示する状態と `@Preview` adapter は各画面の `screens/{feature}/` 配下へ置きます。普段の UI 開発では画面単位の `@Preview` を追加します。部品単位の `@Preview` は作らず、Previewer の group も画面単位で分けます。
 
 状態管理は `flutter_riverpod` の `NotifierProvider` を使い、各画面の `*_notifier.dart` に provider と notifier を置きます。
 
 ## VRT
 
-Flutter 標準の golden test でレイアウト確認用の PreviewCase を Visual Regression Testing (VRT) します。対象は `lib/src/presentation/previews/vrt_previews.dart` の `visualRegressionPreviews` に集約しています。
+Flutter 標準の golden test で `@Preview` を Visual Regression Testing (VRT) します。VRT対象は build_runner で `lib/src/presentation/previews/generated_vrt_previews.dart` に生成し、`lib/src/presentation/previews/vrt_previews.dart` から公開しています。
+
+`@Preview` を追加・変更した場合は、VRT一覧を再生成します。
+
+```bash
+fvm dart run build_runner build --delete-conflicting-outputs
+```
 
 VRT画像は Git 管理せず、ローカルまたは CI 上で都度生成します。PR では base branch と head branch の画像を同じ CI 環境で生成し、生成結果同士を比較します。
 
