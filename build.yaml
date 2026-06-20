@@ -1,0 +1,5 @@
+targets:
+  $default:
+    builders:
+      vrt_preview_builder:vrt_preview_builder:
+        enabled: true

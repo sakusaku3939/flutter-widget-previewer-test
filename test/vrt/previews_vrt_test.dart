@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:widget_previewer_lab/src/presentation/previews/foundation/preview_surface.dart';
 import 'package:widget_previewer_lab/src/presentation/previews/vrt_previews.dart';
 
 void main() {
@@ -30,7 +29,7 @@ void main() {
             key: previewKey,
             child: SizedBox.fromSize(
               size: preview.size,
-              child: PreviewSurface(previewCase: preview),
+              child: preview.builder(),
             ),
           ),
         );

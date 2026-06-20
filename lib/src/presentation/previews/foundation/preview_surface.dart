@@ -3,18 +3,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/design/app_tokens.dart';
 import '../../theme/app_theme.dart';
-import 'preview.dart';
 
 class PreviewSurface extends StatelessWidget {
-  const PreviewSurface({required this.previewCase, super.key});
+  const PreviewSurface({
+    required this.child,
+    this.brightness = Brightness.light,
+    super.key,
+  });
 
-  final PreviewCase previewCase;
+  final Widget child;
+  final Brightness brightness;
 
   @override
   Widget build(BuildContext context) {
-    final theme = previewCase.brightness == Brightness.dark
-        ? AppTheme.dark()
-        : AppTheme.light();
+    final theme =
+        brightness == Brightness.dark ? AppTheme.dark() : AppTheme.light();
 
     return ProviderScope(
       child: MaterialApp(
@@ -24,7 +27,7 @@ class PreviewSurface extends StatelessWidget {
           body: SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(AppTokens.spacing),
-              child: Builder(builder: previewCase.builder),
+              child: child,
             ),
           ),
         ),
