@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:build/build.dart';
+import 'package:dart_style/dart_style.dart';
 import 'package:glob/glob.dart';
+import 'package:pub_semver/pub_semver.dart';
 
 Builder vrtPreviewBuilder(BuilderOptions _) => const VrtPreviewBuilder();
 
@@ -267,7 +269,9 @@ String _renderGeneratedFile(List<_PreviewEntry> entries) {
   }
 
   buffer.writeln('];');
-  return buffer.toString();
+  return DartFormatter(
+    languageVersion: Version(3, 7, 0),
+  ).format(buffer.toString());
 }
 
 String _vrtFileName(String functionName) {
