@@ -33,12 +33,11 @@ dependencies:
   flutter_riverpod: ^3.3.2
 
 dev_dependencies:
-  analyzer: ^8.4.0
-  build: ^4.0.3
   build_runner: ^2.10.4
   flutter_test:
     sdk: flutter
-  glob: ^2.1.3
+  vrt_preview_builder:
+    path: packages/vrt_preview_builder
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

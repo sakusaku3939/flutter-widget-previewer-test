@@ -1,15 +1,5 @@
 targets:
   $default:
     builders:
-      widget_previewer_lab:vrt_preview_builder:
+      vrt_preview_builder:vrt_preview_builder:
         enabled: true
-
-builders:
-  vrt_preview_builder:
-    import: "package:widget_previewer_lab/src/builders/vrt_preview_builder.dart"
-    builder_factories: ["vrtPreviewBuilder"]
-    build_extensions:
-      "$lib$":
-        - "src/presentation/previews/generated_vrt_previews.dart"
-    auto_apply: root_package
-    build_to: source
