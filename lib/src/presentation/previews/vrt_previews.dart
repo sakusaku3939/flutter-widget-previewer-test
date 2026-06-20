@@ -1,1 +1,1 @@
-export 'generated_vrt_previews.dart';
+export 'vrt_previews.g.dart';

@@ -41,13 +41,15 @@ Previewer には各 `screens/{feature}/*_preview.dart` の個別 `@Preview` が�
 
 ## VRT
 
-Flutter 標準の golden test で `@Preview` を Visual Regression Testing (VRT) します。VRT対象は build_runner で `lib/src/presentation/previews/generated_vrt_previews.dart` に生成し、`lib/src/presentation/previews/vrt_previews.dart` から公開しています。
+Flutter 標準の golden test で `@Preview` を Visual Regression Testing (VRT) します。VRT対象は build_runner で `lib/src/presentation/previews/vrt_previews.g.dart` に生成し、`lib/src/presentation/previews/vrt_previews.dart` から公開しています。
 
 `@Preview` を追加・変更した場合は、VRT一覧を再生成します。
 
 ```bash
 fvm dart run build_runner build --delete-conflicting-outputs
 ```
+
+VRT生成対象は、`lib/` 配下の public top-level `@Preview` 関数です。戻り値は `Widget` または `WidgetBuilder`、引数なし、`size` は `Size(width, height)` 形式の定数にしてください。`wrapper` / `theme` / `localizations` / `textScaleFactor` はVRT生成では未対応です。
 
 VRT画像は Git 管理せず、ローカルまたは CI 上で都度生成します。PR では base branch と head branch の画像を同じ CI 環境で生成し、生成結果同士を比較します。
 

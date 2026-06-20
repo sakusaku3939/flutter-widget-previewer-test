@@ -42,6 +42,12 @@ jobs:
         if: github.event_name != 'pull_request'
         run: flutter pub get
 
+      - name: Verify generated VRT previews
+        if: github.event_name != 'pull_request'
+        run: |
+          dart run build_runner build --delete-conflicting-outputs
+          git diff --exit-code lib/src/presentation/previews/vrt_previews.g.dart
+
       - name: Analyze
         if: github.event_name != 'pull_request'
         run: flutter analyze
@@ -56,12 +62,7 @@ jobs:
           rm -rf "$VRT_REPORT_DIR"
           mkdir -p "$VRT_REPORT_DIR/expected" "$VRT_REPORT_DIR/actual" "$VRT_REPORT_DIR/diff"
           flutter pub get
-          test_path="$(
-            find test -type f \( -name 'previews_vrt_test.dart' -o -name 'previews_golden_test.dart' \) |
-              sort |
-              head -n 1
-          )"
-          flutter test "$test_path" --update-goldens
+          flutter test test/vrt/previews_vrt_test.dart --update-goldens
           find test -path '*/ci/*.png' -exec cp {} "$VRT_REPORT_DIR/expected/" \;
 
       - name: Checkout head ref
@@ -74,6 +75,12 @@ jobs:
         if: github.event_name == 'pull_request'
         run: flutter pub get
 
+      - name: Verify generated head VRT previews
+        if: github.event_name == 'pull_request'
+        run: |
+          dart run build_runner build --delete-conflicting-outputs
+          git diff --exit-code lib/src/presentation/previews/vrt_previews.g.dart
+
       - name: Analyze head
         if: github.event_name == 'pull_request'
         run: flutter analyze
@@ -81,12 +88,7 @@ jobs:
       - name: Generate head VRT screenshots
         if: github.event_name == 'pull_request'
         run: |
-          test_path="$(
-            find test -type f \( -name 'previews_vrt_test.dart' -o -name 'previews_golden_test.dart' \) |
-              sort |
-              head -n 1
-          )"
-          flutter test "$test_path" --update-goldens
+          flutter test test/vrt/previews_vrt_test.dart --update-goldens
           find test -path '*/ci/*.png' -exec cp {} "$VRT_REPORT_DIR/actual/" \;
 
       - name: Generate VRT diff report

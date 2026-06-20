@@ -4,6 +4,6 @@ builders:
     builder_factories: ["vrtPreviewBuilder"]
     build_extensions:
       "$lib$":
-        - "src/presentation/previews/generated_vrt_previews.dart"
+        - "src/presentation/previews/vrt_previews.g.dart"
     auto_apply: root_package
     build_to: source

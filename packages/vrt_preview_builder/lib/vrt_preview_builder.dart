@@ -11,11 +11,11 @@ class VrtPreviewBuilder implements Builder {
   const VrtPreviewBuilder();
 
   static const _outputPath =
-      'lib/src/presentation/previews/generated_vrt_previews.dart';
+      'lib/src/presentation/previews/vrt_previews.g.dart';
 
   @override
   Map<String, List<String>> get buildExtensions => const {
-    r'$lib$': ['src/presentation/previews/generated_vrt_previews.dart'],
+    r'$lib$': ['src/presentation/previews/vrt_previews.g.dart'],
   };
 
   @override
@@ -60,6 +60,10 @@ class VrtPreviewBuilder implements Builder {
           }
 
           final arguments = _annotationArguments(annotation);
+          _warnForUnsupportedPreviewArguments(
+            functionName: functionName,
+            arguments: arguments,
+          );
           final group =
               _stringValue(arguments['group'], constants) ?? 'Default';
           final name =
@@ -81,9 +85,6 @@ class VrtPreviewBuilder implements Builder {
               group: group,
               name: name,
               size: size,
-              brightness:
-                  _brightnessValue(arguments['brightness'], constants) ??
-                  'Brightness.light',
               isWidgetBuilder: returnType == 'WidgetBuilder',
               order: order++,
             ),
@@ -108,8 +109,7 @@ class VrtPreviewBuilder implements Builder {
 
   static bool _shouldSkip(AssetId asset) {
     final path = asset.path;
-    return path.endsWith('.g.dart') ||
-        path.endsWith('/generated_vrt_previews.dart');
+    return path.endsWith('.g.dart');
   }
 
   static String _packageUri(String packageName, AssetId asset) {
@@ -192,22 +192,6 @@ _PreviewSize? _sizeValue(
   return _PreviewSize(width: match.group(1)!, height: match.group(2)!);
 }
 
-String? _brightnessValue(
-  Expression? expression,
-  Map<String, Expression> constants,
-) {
-  if (expression == null) {
-    return null;
-  }
-
-  final source = _resolveConstantSource(expression, constants);
-  if (source == 'Brightness.dark' || source == 'Brightness.light') {
-    return source;
-  }
-
-  return null;
-}
-
 String _resolveConstantSource(
   Expression expression,
   Map<String, Expression> constants,
@@ -220,6 +204,23 @@ String _resolveConstantSource(
   }
 
   return source;
+}
+
+void _warnForUnsupportedPreviewArguments({
+  required String functionName,
+  required Map<String, Expression> arguments,
+}) {
+  const unsupported = {'wrapper', 'theme', 'localizations', 'textScaleFactor'};
+  final usedUnsupported = arguments.keys.where(unsupported.contains).toList();
+
+  if (usedUnsupported.isEmpty) {
+    return;
+  }
+
+  log.warning(
+    'Generating VRT for @$functionName without unsupported @Preview '
+    'argument(s): ${usedUnsupported.join(', ')}.',
+  );
 }
 
 String _renderGeneratedFile(List<_PreviewEntry> entries) {
@@ -246,7 +247,7 @@ String _renderGeneratedFile(List<_PreviewEntry> entries) {
 
   buffer
     ..writeln()
-    ..writeln('final List<VrtPreviewCase> visualRegressionPreviews = [');
+    ..writeln('final List<VrtPreviewEntry> visualRegressionPreviews = [');
 
   for (final entry in entries) {
     final alias = imports[entry.importUri]!;
@@ -256,12 +257,11 @@ String _renderGeneratedFile(List<_PreviewEntry> entries) {
             : '$alias.${entry.functionName}';
 
     buffer
-      ..writeln('  VrtPreviewCase(')
+      ..writeln('  VrtPreviewEntry(')
       ..writeln("    vrtFileName: '${_vrtFileName(entry.functionName)}',")
       ..writeln("    group: '${_escapeDartString(entry.group)}',")
       ..writeln("    name: '${_escapeDartString(entry.name)}',")
       ..writeln('    size: Size(${entry.size.width}, ${entry.size.height}),')
-      ..writeln('    brightness: ${entry.brightness},')
       ..writeln('    builder: $builder,')
       ..writeln('  ),');
   }
@@ -302,7 +302,6 @@ class _PreviewEntry {
     required this.group,
     required this.name,
     required this.size,
-    required this.brightness,
     required this.isWidgetBuilder,
     required this.order,
   });
@@ -312,7 +311,6 @@ class _PreviewEntry {
   final String group;
   final String name;
   final _PreviewSize size;
-  final String brightness;
   final bool isWidgetBuilder;
   final int order;
 }

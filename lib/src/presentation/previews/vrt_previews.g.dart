@@ -12,61 +12,54 @@ import 'package:widget_previewer_lab/src/presentation/screens/preview_gallery/pr
 import 'package:widget_previewer_lab/src/presentation/screens/result_summary/result_summary_preview.dart'
     as _i3;
 
-final List<VrtPreviewCase> visualRegressionPreviews = [
-  VrtPreviewCase(
+final List<VrtPreviewEntry> visualRegressionPreviews = [
+  VrtPreviewEntry(
     vrtFileName: 'home_mobile',
     group: 'Home',
     name: 'Mobile layout',
     size: Size(390, 760),
-    brightness: Brightness.light,
     builder: _i1.homeMobilePreview,
   ),
-  VrtPreviewCase(
+  VrtPreviewEntry(
     vrtFileName: 'preview_gallery_mobile',
     group: 'PreviewGallery',
     name: 'Mobile layout',
     size: Size(390, 760),
-    brightness: Brightness.light,
     builder: _i2.previewGalleryMobilePreview,
   ),
-  VrtPreviewCase(
+  VrtPreviewEntry(
     vrtFileName: 'preview_gallery_tablet',
     group: 'PreviewGallery',
     name: 'Tablet layout',
     size: Size(760, 640),
-    brightness: Brightness.light,
     builder: _i2.previewGalleryTabletPreview,
   ),
-  VrtPreviewCase(
+  VrtPreviewEntry(
     vrtFileName: 'result_summary_interactive_mobile',
     group: 'ResultSummary',
     name: 'Interactive mobile',
     size: Size(390, 760),
-    brightness: Brightness.light,
     builder: _i3.resultSummaryInteractiveMobilePreview,
   ),
-  VrtPreviewCase(
+  VrtPreviewEntry(
     vrtFileName: 'result_summary_in_progress_mobile',
     group: 'ResultSummary',
     name: 'In progress mobile',
     size: Size(390, 760),
-    brightness: Brightness.light,
     builder: _i3.resultSummaryInProgressMobilePreview,
   ),
-  VrtPreviewCase(
+  VrtPreviewEntry(
     vrtFileName: 'result_summary_completed_mobile',
     group: 'ResultSummary',
     name: 'Completed mobile',
     size: Size(390, 760),
-    brightness: Brightness.light,
     builder: _i3.resultSummaryCompletedMobilePreview,
   ),
-  VrtPreviewCase(
+  VrtPreviewEntry(
     vrtFileName: 'result_summary_attention_mobile',
     group: 'ResultSummary',
     name: 'Attention mobile',
     size: Size(390, 760),
-    brightness: Brightness.light,
     builder: _i3.resultSummaryAttentionMobilePreview,
   ),
 ];
