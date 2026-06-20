@@ -2,7 +2,7 @@ name: vrt
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, closed]
+    types: [opened, synchronize, reopened]
   push:
     branches: [main]
 
@@ -17,6 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       VRT_REPORT_DIR: /tmp/vrt-report
+      VRT_ASSETS_BRANCH: vrt/screenshot-reports
+      VRT_ASSETS_ROOT: vrt
 
     steps:
       - name: Checkout push ref
@@ -124,14 +126,13 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      - name: Publish VRT images to GitHub Release
+      - name: Publish VRT images to branch
         if: >
           github.event_name == 'pull_request' &&
           github.event.pull_request.head.repo.full_name == github.repository &&
           steps.vrt_report_summary.outputs.has_diff == 'true'
-        id: release_assets
+        id: publish_vrt_assets
         env:
-          GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           REPOSITORY: ${{ github.repository }}
@@ -139,40 +140,46 @@ jobs:
           set -euo pipefail
 
           short_sha="${HEAD_SHA:0:7}"
-          tag="vrt-pr-${PR_NUMBER}-${short_sha}"
-          release_title="VRT images for PR #${PR_NUMBER} ${short_sha}"
-          upload_dir="${RUNNER_TEMP}/vrt-release-assets"
+          relative_path="pr-${PR_NUMBER}/${short_sha}"
+          publish_root="${RUNNER_TEMP}/vrt-assets-branch"
 
-          rm -rf "$upload_dir"
-          mkdir -p "$upload_dir"
+          rm -rf "$publish_root"
+
+          if git ls-remote --exit-code --heads origin "$VRT_ASSETS_BRANCH" >/dev/null 2>&1; then
+            git fetch origin "$VRT_ASSETS_BRANCH" --depth=1
+            git worktree add "$publish_root" FETCH_HEAD
+          else
+            git worktree add --detach "$publish_root"
+            cd "$publish_root"
+            git switch --orphan "$VRT_ASSETS_BRANCH"
+            git rm -rf . >/dev/null 2>&1 || true
+            cd -
+          fi
+
+          target_dir="$publish_root/$VRT_ASSETS_ROOT/$relative_path"
+          rm -rf "$target_dir"
+          mkdir -p "$target_dir"
 
           for kind in expected actual diff; do
             if [ -d "$VRT_REPORT_DIR/$kind" ]; then
               while IFS= read -r -d '' file; do
-                cp "$file" "$upload_dir/${kind}_$(basename "$file")"
+                cp "$file" "$target_dir/${kind}_$(basename "$file")"
               done < <(find "$VRT_REPORT_DIR/$kind" -maxdepth 1 -type f -name '*.png' -print0)
             fi
           done
 
-          if ! gh release view "$tag" --repo "$REPOSITORY" >/dev/null 2>&1; then
-            gh release create "$tag" \
-              --repo "$REPOSITORY" \
-              --target "$HEAD_SHA" \
-              --title "$release_title" \
-              --notes "Temporary VRT image assets for PR #${PR_NUMBER}." \
-              --prerelease \
-              --latest=false
+          cd "$publish_root"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$VRT_ASSETS_ROOT"
+
+          if ! git diff --cached --quiet; then
+            git commit -m "Update VRT images for PR #${PR_NUMBER} ${short_sha} [skip ci]"
+            git push origin "HEAD:$VRT_ASSETS_BRANCH"
           fi
 
-          shopt -s nullglob
-          assets=("$upload_dir"/*.png)
-          if [ "${#assets[@]}" -gt 0 ]; then
-            gh release upload "$tag" "${assets[@]}" --repo "$REPOSITORY" --clobber
-          fi
-
-          echo "tag=$tag" >> "$GITHUB_OUTPUT"
-          echo "url=https://github.com/${REPOSITORY}/releases/tag/${tag}" >> "$GITHUB_OUTPUT"
-          echo "asset_base_url=https://github.com/${REPOSITORY}/releases/download/${tag}" >> "$GITHUB_OUTPUT"
+          echo "url=https://github.com/${REPOSITORY}/tree/${VRT_ASSETS_BRANCH}/${VRT_ASSETS_ROOT}/${relative_path}" >> "$GITHUB_OUTPUT"
+          echo "asset_base_url=https://raw.githubusercontent.com/${REPOSITORY}/refs/heads/${VRT_ASSETS_BRANCH}/${VRT_ASSETS_ROOT}/${relative_path}" >> "$GITHUB_OUTPUT"
 
       - name: Add VRT report summary
         if: github.event_name == 'pull_request'
@@ -186,8 +193,8 @@ jobs:
           else
             echo "- **結果: 差分なし**" >> "$GITHUB_STEP_SUMMARY"
           fi
-          if [ -n "${{ steps.release_assets.outputs.url }}" ]; then
-            echo "- Release assets: ${{ steps.release_assets.outputs.url }}" >> "$GITHUB_STEP_SUMMARY"
+          if [ -n "${{ steps.publish_vrt_assets.outputs.url }}" ]; then
+            echo "- VRT assets: ${{ steps.publish_vrt_assets.outputs.url }}" >> "$GITHUB_STEP_SUMMARY"
           fi
           echo "- 変更: ${{ steps.vrt_report_summary.outputs.failed }}件 / 追加: ${{ steps.vrt_report_summary.outputs.added }}件 / 削除: ${{ steps.vrt_report_summary.outputs.deleted }}件 / 一致: ${{ steps.vrt_report_summary.outputs.passed }}件" >> "$GITHUB_STEP_SUMMARY"
           echo "- \`${{ github.event.pull_request.base.ref }}\` @ \`${{ github.event.pull_request.base.sha }}\` -> \`${{ github.event.pull_request.head.ref }}\` @ \`${{ github.event.pull_request.head.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
@@ -197,7 +204,7 @@ jobs:
         uses: actions/github-script@v8
         env:
           VRT_REPORT_DIR: ${{ env.VRT_REPORT_DIR }}
-          ASSET_BASE_URL: ${{ steps.release_assets.outputs.asset_base_url }}
+          ASSET_BASE_URL: ${{ steps.publish_vrt_assets.outputs.asset_base_url }}
           HAS_DIFF: ${{ steps.vrt_report_summary.outputs.has_diff }}
           FAILED_COUNT: ${{ steps.vrt_report_summary.outputs.failed }}
           ADDED_COUNT: ${{ steps.vrt_report_summary.outputs.added }}
@@ -321,28 +328,3 @@ jobs:
                 body,
               });
             }
-
-  cleanup-vrt-releases:
-    if: >
-      github.event_name == 'pull_request' &&
-      github.event.action == 'closed' &&
-      github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: ubuntu-latest
-    steps:
-      - name: Delete temporary VRT releases
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          REPOSITORY: ${{ github.repository }}
-        run: |
-          set -euo pipefail
-
-          prefix="vrt-pr-${PR_NUMBER}-"
-          gh release list \
-            --repo "$REPOSITORY" \
-            --limit 100 \
-            --json tagName \
-            --jq ".[] | select(.tagName | startswith(\"$prefix\")) | .tagName" |
-          while IFS= read -r tag; do
-            gh release delete "$tag" --repo "$REPOSITORY" --cleanup-tag --yes
-          done
