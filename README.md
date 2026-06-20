@@ -105,7 +105,7 @@ fvm flutter test
 
 ## CI VRT Report
 
-GitHub Actions の `vrt` workflow では、PRごとに base branch と head branch のVRT画像を生成し、Dart製の比較ツールで差分画像を作成します。push ではスクリーンショット生成が通ることを確認します。
+GitHub Actions の `vrt` workflow では、`checks` job で生成済みVRT一覧と静的解析を確認し、PRでは `vrt_pr` job で base branch と head branch のVRT画像を生成して差分画像を作成します。main push では `vrt_push` job でスクリーンショット生成が通ることを確認します。
 
 - base: PRのbase branch（通常は `main`）
 - head: PR branch

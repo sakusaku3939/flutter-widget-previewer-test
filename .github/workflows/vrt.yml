@@ -7,25 +7,73 @@ on:
     branches: [main]
 
 permissions:
-  contents: write
-  issues: write
-  pull-requests: write
+  contents: read
 
 jobs:
-  vrt:
+  checks:
     runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout checked commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.44.2"
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Verify generated VRT manifest
+        run: |
+          dart run build_runner build --delete-conflicting-outputs
+          git diff --exit-code lib/src/presentation/previews/vrt_previews.g.dart
+
+      - name: Analyze
+        run: flutter analyze
+
+  vrt_push:
+    if: github.event_name == 'push'
+    needs: checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout push commit
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.44.2"
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate VRT screenshots
+        run: flutter test test/vrt/previews_vrt_test.dart --update-goldens
+
+  vrt_pr:
+    if: github.event_name == 'pull_request'
+    needs: checks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
     env:
       VRT_REPORT_DIR: /tmp/vrt-report
       VRT_ASSETS_BRANCH: vrt/screenshot-reports
       VRT_ASSETS_ROOT: vrt
 
     steps:
-      - name: Checkout push commit
-        if: github.event_name != 'pull_request'
-        uses: actions/checkout@v4
-
       - name: Checkout PR base commit
-        if: github.event_name == 'pull_request'
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.base.sha }}
@@ -37,30 +85,10 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Install push dependencies
-        if: github.event_name != 'pull_request'
-        run: flutter pub get
-
-      - name: Verify generated VRT manifest on push
-        if: github.event_name != 'pull_request'
-        run: |
-          dart run build_runner build --delete-conflicting-outputs
-          git diff --exit-code lib/src/presentation/previews/vrt_previews.g.dart
-
-      - name: Analyze push commit
-        if: github.event_name != 'pull_request'
-        run: flutter analyze
-
-      - name: Generate push VRT screenshots
-        if: github.event_name != 'pull_request'
-        run: flutter test test/vrt/previews_vrt_test.dart --update-goldens
-
       - name: Install PR base dependencies
-        if: github.event_name == 'pull_request'
         run: flutter pub get
 
       - name: Generate PR base VRT screenshots
-        if: github.event_name == 'pull_request'
         run: |
           rm -rf "$VRT_REPORT_DIR"
           mkdir -p "$VRT_REPORT_DIR/base" "$VRT_REPORT_DIR/head" "$VRT_REPORT_DIR/diff"
@@ -68,37 +96,22 @@ jobs:
           find test -path '*/ci/*.png' -exec cp {} "$VRT_REPORT_DIR/base/" \;
 
       - name: Checkout PR head commit
-        if: github.event_name == 'pull_request'
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Install PR head dependencies
-        if: github.event_name == 'pull_request'
         run: flutter pub get
 
-      - name: Verify generated VRT manifest on PR head
-        if: github.event_name == 'pull_request'
-        run: |
-          dart run build_runner build --delete-conflicting-outputs
-          git diff --exit-code lib/src/presentation/previews/vrt_previews.g.dart
-
-      - name: Analyze PR head
-        if: github.event_name == 'pull_request'
-        run: flutter analyze
-
       - name: Generate PR head VRT screenshots
-        if: github.event_name == 'pull_request'
         run: |
           flutter test test/vrt/previews_vrt_test.dart --update-goldens
           find test -path '*/ci/*.png' -exec cp {} "$VRT_REPORT_DIR/head/" \;
 
       - name: Compare PR base and head VRT screenshots
-        if: github.event_name == 'pull_request'
         run: dart run tool/compare_vrt_images.dart "$VRT_REPORT_DIR/head" "$VRT_REPORT_DIR/base" "$VRT_REPORT_DIR/diff" -J "$VRT_REPORT_DIR/reg.json"
 
       - name: Collect VRT comparison counts
-        if: github.event_name == 'pull_request'
         id: vrt_report_summary
         run: |
           node <<'NODE'
@@ -122,7 +135,6 @@ jobs:
 
       - name: Publish inline VRT assets
         if: >
-          github.event_name == 'pull_request' &&
           steps.vrt_report_summary.outputs.has_diff == 'true'
         id: publish_vrt_assets
         env:
@@ -175,7 +187,6 @@ jobs:
           echo "asset_base_url=https://raw.githubusercontent.com/${REPOSITORY}/refs/heads/${VRT_ASSETS_BRANCH}/${VRT_ASSETS_ROOT}/${relative_path}" >> "$GITHUB_OUTPUT"
 
       - name: Add VRT workflow summary
-        if: github.event_name == 'pull_request'
         run: |
           echo "### スクリーンショット差分" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
@@ -191,7 +202,6 @@ jobs:
           echo "- \`${{ github.event.pull_request.base.ref }}\` @ \`${{ github.event.pull_request.base.sha }}\` -> \`${{ github.event.pull_request.head.ref }}\` @ \`${{ github.event.pull_request.head.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upsert VRT PR comment
-        if: github.event_name == 'pull_request'
         uses: actions/github-script@v8
         env:
           VRT_REPORT_DIR: ${{ env.VRT_REPORT_DIR }}
