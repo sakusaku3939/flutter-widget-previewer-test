@@ -10,7 +10,8 @@ permissions:
   contents: read
 
 jobs:
-  checks:
+  verify:
+    name: Verify
     runs-on: ubuntu-latest
 
     steps:
@@ -37,9 +38,10 @@ jobs:
       - name: Analyze
         run: flutter analyze
 
-  vrt_push:
+  generate_screenshots:
+    name: Generate screenshots
     if: github.event_name == 'push'
-    needs: checks
+    needs: verify
     runs-on: ubuntu-latest
 
     steps:
@@ -59,9 +61,10 @@ jobs:
       - name: Generate VRT screenshots
         run: flutter test test/vrt/previews_vrt_test.dart --update-goldens
 
-  vrt_pr:
+  compare_screenshots:
+    name: Compare screenshots
     if: github.event_name == 'pull_request'
-    needs: checks
+    needs: verify
     runs-on: ubuntu-latest
     permissions:
       contents: write
