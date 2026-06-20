@@ -223,20 +223,40 @@ jobs:
 
             const reportPath = path.join(process.env.VRT_REPORT_DIR, 'reg.json');
             const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+            const failedItems = report.failedItems || [];
+            const newItems = report.newItems || [];
+            const deletedItems = report.deletedItems || [];
             const changedItems = [
-              ...(report.failedItems || []),
-              ...(report.newItems || []),
-              ...(report.deletedItems || []),
+              ...failedItems,
+              ...newItems,
+              ...deletedItems,
             ];
+            const newItemSet = new Set(newItems);
+            const deletedItemSet = new Set(deletedItems);
             const maxInlineItems = 12;
 
-            function assetImage(kind, fileName, width = 220) {
-              if (!assetBaseUrl) return '-';
+            function assetImage(kind, fileName, width = 220, fallback = 'N/A') {
+              if (!assetBaseUrl) return fallback;
               const localPath = path.join(process.env.VRT_REPORT_DIR, kind, fileName);
-              if (!fs.existsSync(localPath)) return '-';
+              if (!fs.existsSync(localPath)) return fallback;
               const assetName = `${kind}_${fileName}`;
               const url = `${assetBaseUrl}/${encodeURIComponent(assetName)}`;
               return `<img src="${url}" alt="${kind} ${fileName}" width="${width}">`;
+            }
+
+            function beforeCell(fileName) {
+              if (newItemSet.has(fileName)) return 'No baseline';
+              return assetImage('expected', fileName);
+            }
+
+            function afterCell(fileName) {
+              if (deletedItemSet.has(fileName)) return 'Removed';
+              return assetImage('actual', fileName);
+            }
+
+            function diffCell(fileName) {
+              if (newItemSet.has(fileName) || deletedItemSet.has(fileName)) return 'N/A';
+              return assetImage('diff', fileName);
             }
 
             const imageSections = [];
@@ -246,11 +266,11 @@ jobs:
                 imageSections.push('| Before | After | Diff |');
                 imageSections.push('| --- | --- | --- |');
                 imageSections.push(
-                  [
-                    assetImage('expected', fileName),
-                    assetImage('actual', fileName),
-                    assetImage('diff', fileName),
-                  ].join(' | '),
+                  `| ${[
+                    beforeCell(fileName),
+                    afterCell(fileName),
+                    diffCell(fileName),
+                  ].join(' | ')} |`,
                 );
                 imageSections.push('');
               }
