@@ -110,6 +110,6 @@ GitHub Actions の `vrt` workflow では、`Verify` job で生成済みVRT一覧
 - base: PRのbase branch（通常は `main`）
 - head: PR branch
 - 差分ありの場合: `vrt/screenshot-reports` ブランチの `vrt/pr-<number>/<short_sha>/` に `base_*` / `head_*` / `diff_*` 画像をコミット
-- PRコメント: 同じbotコメントを更新し、同一リポジトリ内PRでは base / head / diff 画像を表形式でインライン表示
+- PRコメント: 同じbotコメントを更新し、同一リポジトリ内PRでは Before / After / Diff 画像を表形式でインライン表示
 
 画像は専用ブランチにコミットするため、PR merge 後も参照できます。Actionsのレポート更新コミットには `[skip ci]` を付け、余計なCI起動を抑えます。
