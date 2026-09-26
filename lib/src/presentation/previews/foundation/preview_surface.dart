@@ -16,8 +16,16 @@ class PreviewSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme =
-        brightness == Brightness.dark ? AppTheme.dark() : AppTheme.light();
+    final appTheme = brightness == Brightness.dark
+        ? AppTheme.dark()
+        : AppTheme.light();
+    // Registered only by the golden test; Previewer uses system fallback.
+    final theme = appTheme.copyWith(
+      textTheme: appTheme.textTheme.apply(fontFamily: 'NotoSansJP'),
+      primaryTextTheme: appTheme.primaryTextTheme.apply(
+        fontFamily: 'NotoSansJP',
+      ),
+    );
 
     return ProviderScope(
       child: MaterialApp(

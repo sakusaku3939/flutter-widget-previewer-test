@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -64,4 +65,13 @@ Future<void> _loadAppFonts() async {
 
     await loader.load();
   }
+
+  // Keep the Japanese VRT font out of the release asset bundle.
+  final loader = FontLoader('NotoSansJP')
+    ..addFont(
+      File(
+        'assets/fonts/NotoSansJP-Regular.ttf',
+      ).readAsBytes().then(ByteData.sublistView),
+    );
+  await loader.load();
 }
