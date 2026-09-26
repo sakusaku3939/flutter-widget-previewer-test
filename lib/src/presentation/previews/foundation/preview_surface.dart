@@ -21,6 +21,9 @@ class PreviewSurface extends StatelessWidget {
         : AppTheme.light();
     // Registered only by the golden test; Previewer uses system fallback.
     final theme = appTheme.copyWith(
+      // Preview/VRT intentionally excludes Material elevation shadows.
+      shadowColor: Colors.transparent,
+      colorScheme: appTheme.colorScheme.copyWith(shadow: Colors.transparent),
       textTheme: appTheme.textTheme.apply(fontFamily: 'NotoSansJP'),
       primaryTextTheme: appTheme.primaryTextTheme.apply(
         fontFamily: 'NotoSansJP',
