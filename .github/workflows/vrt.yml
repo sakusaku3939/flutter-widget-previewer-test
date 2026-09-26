@@ -9,6 +9,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: vrt-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   verify:
     name: Verify
@@ -28,15 +32,28 @@ jobs:
           cache: true
 
       - name: Install dependencies
-        run: flutter pub get
+        run: |
+          flutter pub get
+          dart pub get --directory packages/vrt_preview_builder
 
       - name: Verify generated VRT manifest
         run: |
           dart run build_runner build --delete-conflicting-outputs
-          git diff --exit-code lib/src/presentation/previews/vrt_previews.g.dart
+          if [ -n "$(git status --porcelain -- lib/src/presentation/previews/vrt_previews.g.dart)" ]; then
+            git diff -- lib/src/presentation/previews/vrt_previews.g.dart
+            echo "::error::Regenerate and commit the VRT manifest."
+            exit 1
+          fi
 
       - name: Analyze
         run: flutter analyze
+
+      - name: Test VRT preview builder
+        working-directory: packages/vrt_preview_builder
+        run: dart test
+
+      - name: Test without generated goldens
+        run: flutter test --exclude-tags golden
 
   generate_screenshots:
     name: Generate screenshots
@@ -136,9 +153,18 @@ jobs:
           fs.appendFileSync(process.env.GITHUB_OUTPUT, `has_diff=${changed > 0}\n`);
           NODE
 
+      - name: Upload comparison report
+        uses: actions/upload-artifact@v4
+        with:
+          name: vrt-report-${{ github.event.pull_request.number }}
+          path: ${{ env.VRT_REPORT_DIR }}
+          if-no-files-found: error
+
       - name: Publish inline VRT assets
         if: >
           steps.vrt_report_summary.outputs.has_diff == 'true'
+          && github.event.pull_request.head.repo.full_name == github.repository
+          && github.actor != 'dependabot[bot]'
         id: publish_vrt_assets
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
@@ -153,46 +179,63 @@ jobs:
 
           rm -rf "$publish_root"
 
-          if git ls-remote --exit-code --heads origin "$VRT_ASSETS_BRANCH" >/dev/null 2>&1; then
-            git fetch origin "$VRT_ASSETS_BRANCH" --depth=1
-            git worktree add "$publish_root" FETCH_HEAD
-          else
-            git worktree add --detach "$publish_root"
+          # Different PRs share this branch. Reapply only this report after a race.
+          for attempt in 1 2 3 4 5; do
+            if git ls-remote --exit-code --heads origin "$VRT_ASSETS_BRANCH" >/dev/null 2>&1; then
+              git fetch origin "$VRT_ASSETS_BRANCH" --depth=1
+              git worktree add "$publish_root" FETCH_HEAD
+            else
+              git worktree add --detach "$publish_root"
+              cd "$publish_root"
+              git switch --orphan "$VRT_ASSETS_BRANCH"
+              git rm -rf . >/dev/null 2>&1 || true
+              cd -
+            fi
+
+            target_dir="$publish_root/$VRT_ASSETS_ROOT/$relative_path"
+            rm -rf "$target_dir"
+            mkdir -p "$target_dir"
+
+            for kind in base head diff; do
+              if [ -d "$VRT_REPORT_DIR/$kind" ]; then
+                while IFS= read -r -d '' file; do
+                  cp "$file" "$target_dir/${kind}_$(basename "$file")"
+                done < <(find "$VRT_REPORT_DIR/$kind" -maxdepth 1 -type f -name '*.png' -print0)
+              fi
+            done
+
             cd "$publish_root"
-            git switch --orphan "$VRT_ASSETS_BRANCH"
-            git rm -rf . >/dev/null 2>&1 || true
-            cd -
-          fi
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add "$VRT_ASSETS_ROOT"
 
-          target_dir="$publish_root/$VRT_ASSETS_ROOT/$relative_path"
-          rm -rf "$target_dir"
-          mkdir -p "$target_dir"
+            if ! git diff --cached --quiet; then
+              git commit -m "Update VRT images for PR #${PR_NUMBER} ${short_sha} [skip ci]"
 
-          for kind in base head diff; do
-            if [ -d "$VRT_REPORT_DIR/$kind" ]; then
-              while IFS= read -r -d '' file; do
-                cp "$file" "$target_dir/${kind}_$(basename "$file")"
-              done < <(find "$VRT_REPORT_DIR/$kind" -maxdepth 1 -type f -name '*.png' -print0)
+            fi
+
+            if git push origin "HEAD:$VRT_ASSETS_BRANCH"; then
+              break
+            fi
+            cd "$GITHUB_WORKSPACE"
+            git worktree remove --force "$publish_root"
+            if [ "$attempt" -eq 5 ]; then
+              echo "::error::Unable to publish VRT images after five attempts."
+              exit 1
             fi
           done
-
-          cd "$publish_root"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "$VRT_ASSETS_ROOT"
-
-          if ! git diff --cached --quiet; then
-            git commit -m "Update VRT images for PR #${PR_NUMBER} ${short_sha} [skip ci]"
-            git push origin "HEAD:$VRT_ASSETS_BRANCH"
-          fi
 
           echo "url=https://github.com/${REPOSITORY}/tree/${VRT_ASSETS_BRANCH}/${VRT_ASSETS_ROOT}/${relative_path}" >> "$GITHUB_OUTPUT"
           echo "asset_base_url=https://raw.githubusercontent.com/${REPOSITORY}/refs/heads/${VRT_ASSETS_BRANCH}/${VRT_ASSETS_ROOT}/${relative_path}" >> "$GITHUB_OUTPUT"
 
       - name: Upsert VRT PR comment
+        if: >-
+          github.event.pull_request.head.repo.full_name == github.repository
+          && github.actor != 'dependabot[bot]'
         uses: actions/github-script@v8
         env:
           VRT_REPORT_DIR: ${{ env.VRT_REPORT_DIR }}
+          REPORT_URL: ${{ steps.publish_vrt_assets.outputs.url }}
           ASSET_BASE_URL: ${{ steps.publish_vrt_assets.outputs.asset_base_url }}
           HAS_DIFF: ${{ steps.vrt_report_summary.outputs.has_diff }}
           FAILED_COUNT: ${{ steps.vrt_report_summary.outputs.failed }}
@@ -311,6 +354,7 @@ jobs:
               `- 変更: ${process.env.FAILED_COUNT}件 / 追加: ${process.env.ADDED_COUNT}件 / 削除: ${process.env.DELETED_COUNT}件 / 一致: ${process.env.PASSED_COUNT}件`,
               `- \`${baseRef}\` @ \`${baseSha}\` -> \`${headRef}\` @ \`${headSha}\``,
               '',
+              ...(process.env.REPORT_URL ? [`- [全画像を見る](${process.env.REPORT_URL})`] : []),
               ...imageSections,
               '',
               `_run #${context.runNumber} で更新_`,

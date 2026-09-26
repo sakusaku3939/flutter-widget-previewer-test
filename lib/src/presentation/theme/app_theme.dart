@@ -38,7 +38,6 @@ class AppTheme {
   static ThemeData _base(ColorScheme colorScheme) {
     return ThemeData(
       useMaterial3: true,
-      fontFamily: 'NotoSansJP',
       colorScheme: colorScheme,
       textTheme: const TextTheme(
         headlineSmall: TextStyle(

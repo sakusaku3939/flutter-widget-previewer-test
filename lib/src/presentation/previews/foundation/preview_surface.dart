@@ -16,8 +16,19 @@ class PreviewSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme =
-        brightness == Brightness.dark ? AppTheme.dark() : AppTheme.light();
+    final appTheme = brightness == Brightness.dark
+        ? AppTheme.dark()
+        : AppTheme.light();
+    // Registered only by the golden test; Previewer uses system fallback.
+    final theme = appTheme.copyWith(
+      // Preview/VRT intentionally excludes Material elevation shadows.
+      shadowColor: Colors.transparent,
+      colorScheme: appTheme.colorScheme.copyWith(shadow: Colors.transparent),
+      textTheme: appTheme.textTheme.apply(fontFamily: 'NotoSansJP'),
+      primaryTextTheme: appTheme.primaryTextTheme.apply(
+        fontFamily: 'NotoSansJP',
+      ),
+    );
 
     return ProviderScope(
       child: MaterialApp(

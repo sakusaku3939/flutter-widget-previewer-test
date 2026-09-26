@@ -1,9 +1,12 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:widget_previewer_lab/src/presentation/previews/vrt_previews.dart';
+
+import 'support/preview_images.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -11,6 +14,10 @@ void main() {
   setUpAll(_loadAppFonts);
 
   group('preview VRT', () {
+    test('contains preview entries', () {
+      expect(visualRegressionPreviews, isNotEmpty);
+    }, tags: 'golden');
+
     for (final preview in visualRegressionPreviews) {
       testWidgets('${preview.group} ${preview.name}', (tester) async {
         await tester.binding.setSurfaceSize(preview.size);
@@ -33,6 +40,7 @@ void main() {
             ),
           ),
         );
+        await tester.runAsync(() => waitForPreviewImages(tester));
         await tester.pump();
 
         await expectLater(
@@ -60,4 +68,13 @@ Future<void> _loadAppFonts() async {
 
     await loader.load();
   }
+
+  // Keep the Japanese VRT font out of the release asset bundle.
+  final loader = FontLoader('NotoSansJP')
+    ..addFont(
+      File(
+        'assets/fonts/NotoSansJP-Regular.ttf',
+      ).readAsBytes().then(ByteData.sublistView),
+    );
+  await loader.load();
 }
