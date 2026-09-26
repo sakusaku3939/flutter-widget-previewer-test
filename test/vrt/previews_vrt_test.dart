@@ -6,6 +6,8 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:widget_previewer_lab/src/presentation/previews/vrt_previews.dart';
 
+import 'support/preview_images.dart';
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -38,6 +40,7 @@ void main() {
             ),
           ),
         );
+        await tester.runAsync(() => waitForPreviewImages(tester));
         await tester.pump();
 
         await expectLater(
