@@ -11,6 +11,10 @@ void main() {
   setUpAll(_loadAppFonts);
 
   group('preview VRT', () {
+    test('contains preview entries', () {
+      expect(visualRegressionPreviews, isNotEmpty);
+    }, tags: 'golden');
+
     for (final preview in visualRegressionPreviews) {
       testWidgets('${preview.group} ${preview.name}', (tester) async {
         await tester.binding.setSurfaceSize(preview.size);
