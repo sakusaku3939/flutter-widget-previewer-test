@@ -3,6 +3,8 @@ import 'dart:io';
 
 import 'package:image/image.dart' as image;
 
+import 'vrt_image_comparison.dart';
+
 void main(List<String> args) {
   final options = _Options.parse(args);
 
@@ -43,7 +45,7 @@ void main(List<String> args) {
 
     final head = _decodePng(headFile);
     final base = _decodePng(baseFile);
-    final comparison = _compareImages(head: head, base: base);
+    final comparison = compareVrtImages(head: head, base: base);
 
     if (comparison.isMatch) {
       passedItems.add(name);
@@ -104,65 +106,11 @@ image.Image _decodePng(File file) {
   return decoded;
 }
 
-_ImageComparison _compareImages({
-  required image.Image head,
-  required image.Image base,
-}) {
-  final width = head.width > base.width ? head.width : base.width;
-  final height = head.height > base.height ? head.height : base.height;
-  final diff = image.Image(width: width, height: height);
-  var changedPixels = 0;
-
-  for (var y = 0; y < height; y++) {
-    for (var x = 0; x < width; x++) {
-      final hasHead = x < head.width && y < head.height;
-      final hasBase = x < base.width && y < base.height;
-
-      if (!hasHead || !hasBase) {
-        changedPixels++;
-        diff.setPixelRgba(x, y, 255, 0, 255, 255);
-        continue;
-      }
-
-      final headPixel = head.getPixel(x, y);
-      final basePixel = base.getPixel(x, y);
-      final matches =
-          headPixel.r == basePixel.r &&
-          headPixel.g == basePixel.g &&
-          headPixel.b == basePixel.b &&
-          headPixel.a == basePixel.a;
-
-      if (matches) {
-        diff.setPixelRgba(
-          x,
-          y,
-          headPixel.r,
-          headPixel.g,
-          headPixel.b,
-          headPixel.a,
-        );
-      } else {
-        changedPixels++;
-        diff.setPixelRgba(x, y, 255, 0, 255, 255);
-      }
-    }
-  }
-
-  return _ImageComparison(isMatch: changedPixels == 0, diff: diff);
-}
-
 void _requireDirectory(Directory directory, String label) {
   if (directory.existsSync()) return;
 
   stderr.writeln('Missing $label directory: ${directory.path}');
   exit(64);
-}
-
-class _ImageComparison {
-  const _ImageComparison({required this.isMatch, required this.diff});
-
-  final bool isMatch;
-  final image.Image diff;
 }
 
 class _Options {
