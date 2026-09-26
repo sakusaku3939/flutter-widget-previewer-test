@@ -10,7 +10,7 @@ Future<TestBuilderResult> generate(String source, {String? other}) {
   const builder = VrtPreviewBuilder();
   return testBuilders(
     [builder],
-    {'app|lib/a.dart': source, if (other != null) 'app|lib/b.dart': other},
+    {'app|lib/a.dart': source, 'app|lib/b.dart': ?other},
     rootPackage: 'app',
     visibleOutputBuilders: {builder},
   );
@@ -27,7 +27,7 @@ Widget firstPreview() => const Text('First');
 WidgetBuilder secondPreview() => (context) => const Text('Second');
 ''');
     expect(result.buildResult.status, BuildStatus.success);
-    final source = await result.readerWriter.testing.readString(
+    final source = result.readerWriter.testing.readString(
       AssetId.parse(output),
     );
     expect(source, contains('Size(390, 844)'));
