@@ -1,128 +1,125 @@
 # Widget Previewer Lab
 
-Flutter Widget Previewer を検証するための最小テストアプリです。`@Preview` 付き Widget、通常アプリ起動、Android エミュレーター確認、`flutter analyze` / `flutter test` の実行を同じリポジトリで確認できます。
-
-## 前提
-
-- Flutter `3.35+`
-- IDE の Widget Previewer 連携を見る場合は Flutter `3.38+`
-- このリポジトリでは FVM stable を使用します
-
-```bash
-fvm use stable
-fvm flutter --version
-```
+Flutter Widget Previewer と golden test による画像差分テスト（VRT）の検証用アプリ。
 
 ## セットアップ
 
+FVM の stable を使用する。
+Dart SDK 要件は `^3.12.1`、CI の Flutter は `3.44.2`。
+
 ```bash
+fvm use stable
 fvm flutter pub get
 fvm dart pub get --directory packages/vrt_preview_builder
 fvm dart run build_runner build --delete-conflicting-outputs
 ```
 
-FVM を使わない場合は、PATH 上の Flutter が `3.35+` であることを確認してから `flutter` コマンドに置き換えてください。
+FVM を使用しない場合は `fvm` を除外し、Flutter SDK 付属の Dart を使用する。
 
-VRT一覧は Git 管理しません。clone 直後や `flutter clean` 後は、静的解析・テストの前に上記の生成コマンドを実行してください。FVM を使わず Dart コマンドを実行する場合も、Flutter SDK に付属する Dart を使います。
+VRT 一覧は Git 管理の対象外とする。
+clone 直後、`flutter clean` 実行後、`@Preview` の変更後は、解析やテストの前に `build_runner` を再実行する。
 
 ## Widget Previewer
-
-Previewer を起動します。
 
 ```bash
 fvm flutter widget-preview start
 ```
 
-Previewer には各 `screens/{feature}/*_preview.dart` の個別 `@Preview` が表示されます。
+| 画面 | プレビュー |
+| --- | --- |
+| Home | mobile |
+| PreviewGallery | mobile / tablet |
+| ResultSummary | 操作可能な mobile / 状態別 mobile |
 
-- `Home`: mobile
-- `PreviewGallery`: mobile / tablet
-- `ResultSummary`: interactive mobile / 状態別 mobile。`ResultSummaryNotifier` で表示状態を切り替える状態管理の例です。
+`@Preview` は `lib/src/presentation/screens/{feature}/*_preview.dart` に定義する。
+プレビューと group は画面単位とし、部品単位では作成しない。
 
-表示する状態と `@Preview` adapter は各画面の `screens/{feature}/` 配下へ置きます。普段の UI 開発では画面単位の `@Preview` を追加します。部品単位の `@Preview` は作らず、Previewer の group も画面単位で分けます。
-
-状態管理は `flutter_riverpod` の `NotifierProvider` を使い、各画面の `*_notifier.dart` に provider と notifier を置きます。
+状態管理には Riverpod の `NotifierProvider` を使用し、provider と notifier は各画面の `*_notifier.dart` に配置する。
+`ResultSummary` が状態切り替えの実装例となる。
 
 ## VRT
 
-Flutter 標準の golden test で `@Preview` を Visual Regression Testing (VRT) します。VRT対象は build_runner で `lib/src/presentation/previews/vrt_previews.g.dart` に生成し、`lib/src/presentation/previews/vrt_previews.dart` から公開しています。
+`@Preview` からテスト対象一覧を生成し、golden test で描画結果を検証する。
+通常の画像生成と比較は CI で実行する。
 
-通常の画像生成・比較は CI に任せます。CI は解析・撮影前にVRT一覧を生成するため、`@Preview` の追加・変更時に生成一覧をコミットする必要はありません。ローカルで静的解析・テストを直接実行する場合は、先に一覧を再生成します。
+### プレビューの条件
+
+- `lib/` 配下の public なトップレベル関数
+- 引数なし、戻り値に `Widget` または `WidgetBuilder` を明記
+- `size` は生成処理が解決できる `Size(width, height)` 形式の定数
+- 関数名から決まる画像出力名が全ファイルで一意
+- 1 関数につき `@Preview` は 1 つ
+
+static メソッドやコンストラクタは対象外とする。
+`wrapper`、`theme`、`brightness`、`localizations`、`textScaleFactor` も未対応であり、指定すると生成エラーとなる。
+
+### ローカル実行
+
+プロジェクトルートで実行する。
 
 ```bash
-fvm dart run build_runner build --delete-conflicting-outputs
-```
-
-VRT生成対象は、`lib/` 配下の public top-level `@Preview` 関数です。戻り値は `Widget` または `WidgetBuilder`、引数なし、`size` は `Size(width, height)` 形式の定数にしてください。`wrapper` / `theme` / `brightness` / `localizations` / `textScaleFactor` はVRT生成では未対応で、指定すると生成をエラーにします。未対応の関数定義・staticメソッド・コンストラクタや、解決できないsizeもエラーにします。関数名から決まる画像出力名は全ファイルで一意にしてください。同じ関数への複数の`@Preview`も出力名が重複するためエラーです。
-
-VRT画像は Git 管理せず、ローカルまたは CI 上で都度生成します。PR では base branch と head branch の画像を同じ CI 環境で生成し、生成結果同士を比較します。
-
-ローカルでVRT画像を生成する場合は、プロジェクトルートで次を実行します。一覧生成と撮影を順に実行し、一覧生成に失敗した場合は撮影しません。
-
-```bash
+# 基準画像を生成
 fvm dart run tool/run_vrt.dart --update-goldens
-```
 
-生成済み画像と現在の描画結果をローカルで比較する場合は次を実行します。
-
-```bash
+# 基準画像と現在の描画結果を比較
 fvm dart run tool/run_vrt.dart
 ```
 
-生成された `test/vrt/goldens/ci/*.png` はローカル確認用の一時成果物で、コミット対象にはしません。
+いずれも VRT 一覧を再生成し、成功した場合のみテストを実行する。
+画像は `test/vrt/goldens/ci/` に出力され、Git 管理の対象外となる。
 
-生成画像は `test/vrt/goldens/ci/` に出力し、PR CI では base branch と head branch の同名画像を比較します。
-
-### 描画条件
-
-- NotoSansJP はVRTテストがファイルから直接読み込みます。`pubspec.yaml` の fonts/assets には登録せず、リリースアプリへ同梱しません。実アプリとWidget Previewerはシステムフォントを使用するため、VRTと字形が異なる場合があります。
-- PreviewSurfaceではMaterialの影を無効にします。VRTは影の見た目を検証しません。
-- 撮影前に画面内の`Image`の最初のフレームのデコード完了を待ちます。読み込み失敗や10秒のタイムアウトはテストを失敗させます。`DecorationImage`等はこの待機処理の対象外です。外部ネットワークに依存せず、固定のローカル画像を使用してください。
-- 生成一覧が空の場合はVRTテストを失敗させます。
-
-## Android エミュレーター確認
-
-利用可能なエミュレーターを確認します。
+## Android エミュレーター
 
 ```bash
 fvm flutter emulators
-```
-
-エミュレーターを起動します。
-
-```bash
 fvm flutter emulators --launch <emulator_id>
-```
-
-起動中のデバイスを確認します。
-
-```bash
 fvm flutter devices
-```
-
-アプリを実行します。
-
-```bash
 fvm flutter run -d <device_id>
 ```
 
 ## 検証
 
+セットアップと VRT 一覧の生成後に実行する。
+
 ```bash
-fvm dart pub get --directory packages/vrt_preview_builder
-fvm dart run build_runner build --delete-conflicting-outputs
 fvm flutter analyze
-# packages/vrt_preview_builder で fvm dart test も実行
 fvm flutter test --exclude-tags golden
 fvm dart run tool/run_vrt.dart --update-goldens
 fvm flutter test
 ```
 
-## CI VRT Report
+生成処理のテストは `packages/vrt_preview_builder` で実行する。
 
-GitHub Actions の `vrt` workflow では、`Verify` job でVRT一覧を生成してから静的解析・テストを実行します。PRでは `Compare screenshots` job で base SHA と head SHA それぞれのソースから一覧とVRT画像を生成して差分画像を作成します。main push では `Generate screenshots` job で一覧生成と撮影が通ることを確認します。
+```bash
+fvm dart test
+```
 
-- base: PRのbase branch（通常は `main`）
-- head: PR branch
-- 差分ありの場合: `vrt/screenshot-reports` ブランチの `vrt/pr-<number>/<short_sha>/` に `base_*` / `head_*` / `diff_*` 画像をコミット
-- PRコメント: 同じbotコメントを更新し、同一リポジトリ内PRでは Before / After / Diff 画像を表形式でインライン表示
+## CI
+
+GitHub Actions の `vrt` ワークフローで実行する。
+解析や撮影の前に VRT 一覧を生成する。
+
+| ジョブ | 内容 |
+| --- | --- |
+| Verify | 静的解析、生成処理のテスト、golden 以外のテスト |
+| Compare screenshots（PR） | base SHA と head SHA の画像を同じ環境で生成し、変更、追加、削除を検出 |
+| Generate screenshots（main push） | 一覧生成と撮影の成功を確認 |
+
+PR の比較結果は Actions アーティファクトに保存する。
+同一リポジトリ内の PR（Dependabot を除く）では同じ bot コメントを更新し、差分がある場合は Before / After / Diff を最大 12 件表示する。
+
+コメント用の画像は、差分がある場合に `vrt/screenshot-reports` ブランチの `vrt/pr-<number>/<short_sha>/` へ保存する。
+
+## 補足
+
+### VRT の描画
+
+- テスト専用の NotoSansJP を使用するため、実アプリや Previewer と字形が異なる場合がある。
+- Material の影は表示安定性のため無効にする。
+- `Image` の読み込み失敗、10 秒のタイムアウト、VRT 一覧が空の場合はテスト失敗となる（`DecorationImage` は読み込み待機の対象外）。
+- 画像は固定のローカルファイルを使用する。
+
+### private リポジトリでの画像表示
+
+現在の raw URL 方式では画像を表示できないため、外部ストレージへのアップロードか、GitHub CLI v2.99.0 以降の `gh pr comment --attach` を利用する。
+v2.99.0 の添付機能は `GITHUB_TOKEN` に未対応のため、CI では必要な権限を設定した PAT などを使用する。
