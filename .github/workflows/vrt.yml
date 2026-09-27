@@ -36,14 +36,8 @@ jobs:
           flutter pub get
           dart pub get --directory packages/vrt_preview_builder
 
-      - name: Verify generated VRT manifest
-        run: |
-          dart run build_runner build --delete-conflicting-outputs
-          if [ -n "$(git status --porcelain -- lib/src/presentation/previews/vrt_previews.g.dart)" ]; then
-            git diff -- lib/src/presentation/previews/vrt_previews.g.dart
-            echo "::error::Regenerate and commit the VRT manifest."
-            exit 1
-          fi
+      - name: Generate VRT manifest
+        run: dart run build_runner build --delete-conflicting-outputs
 
       - name: Analyze
         run: flutter analyze
@@ -76,7 +70,7 @@ jobs:
         run: flutter pub get
 
       - name: Generate VRT screenshots
-        run: flutter test test/vrt/previews_vrt_test.dart --update-goldens
+        run: dart run tool/run_vrt.dart --update-goldens
 
   compare_screenshots:
     name: Compare screenshots
@@ -112,6 +106,7 @@ jobs:
         run: |
           rm -rf "$VRT_REPORT_DIR"
           mkdir -p "$VRT_REPORT_DIR/base" "$VRT_REPORT_DIR/head" "$VRT_REPORT_DIR/diff"
+          dart run build_runner build --delete-conflicting-outputs
           flutter test test/vrt/previews_vrt_test.dart --update-goldens
           find test -path '*/ci/*.png' -exec cp {} "$VRT_REPORT_DIR/base/" \;
 
@@ -125,7 +120,7 @@ jobs:
 
       - name: Generate PR head VRT screenshots
         run: |
-          flutter test test/vrt/previews_vrt_test.dart --update-goldens
+          dart run tool/run_vrt.dart --update-goldens
           find test -path '*/ci/*.png' -exec cp {} "$VRT_REPORT_DIR/head/" \;
 
       - name: Compare PR base and head VRT screenshots
