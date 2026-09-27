@@ -48,5 +48,8 @@ app.*.map.json
 test/**/goldens/**/*.*
 test/**/failures/**/*.*
 
+# VRT manifest is generated before analysis and screenshot tests.
+/lib/src/presentation/previews/vrt_previews.g.dart
+
 # FVM Version Cache
 .fvm/

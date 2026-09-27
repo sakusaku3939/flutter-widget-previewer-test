@@ -17,9 +17,13 @@ fvm flutter --version
 
 ```bash
 fvm flutter pub get
+fvm dart pub get --directory packages/vrt_preview_builder
+fvm dart run build_runner build --delete-conflicting-outputs
 ```
 
 FVM を使わない場合は、PATH 上の Flutter が `3.35+` であることを確認してから `flutter` コマンドに置き換えてください。
+
+VRT一覧は Git 管理しません。clone 直後や `flutter clean` 後は、静的解析・テストの前に上記の生成コマンドを実行してください。FVM を使わず Dart コマンドを実行する場合も、Flutter SDK に付属する Dart を使います。
 
 ## Widget Previewer
 
@@ -43,7 +47,7 @@ Previewer には各 `screens/{feature}/*_preview.dart` の個別 `@Preview` が�
 
 Flutter 標準の golden test で `@Preview` を Visual Regression Testing (VRT) します。VRT対象は build_runner で `lib/src/presentation/previews/vrt_previews.g.dart` に生成し、`lib/src/presentation/previews/vrt_previews.dart` から公開しています。
 
-`@Preview` を追加・変更した場合は、VRT一覧を再生成します。
+通常の画像生成・比較は CI に任せます。CI は解析・撮影前にVRT一覧を生成するため、`@Preview` の追加・変更時に生成一覧をコミットする必要はありません。ローカルで静的解析・テストを直接実行する場合は、先に一覧を再生成します。
 
 ```bash
 fvm dart run build_runner build --delete-conflicting-outputs
@@ -53,16 +57,16 @@ VRT生成対象は、`lib/` 配下の public top-level `@Preview` 関数です�
 
 VRT画像は Git 管理せず、ローカルまたは CI 上で都度生成します。PR では base branch と head branch の画像を同じ CI 環境で生成し、生成結果同士を比較します。
 
-VRT画像を生成する場合は次を実行します。
+ローカルでVRT画像を生成する場合は、プロジェクトルートで次を実行します。一覧生成と撮影を順に実行し、一覧生成に失敗した場合は撮影しません。
 
 ```bash
-fvm flutter test test/vrt/previews_vrt_test.dart --update-goldens
+fvm dart run tool/run_vrt.dart --update-goldens
 ```
 
 生成済み画像と現在の描画結果をローカルで比較する場合は次を実行します。
 
 ```bash
-fvm flutter test test/vrt/previews_vrt_test.dart
+fvm dart run tool/run_vrt.dart
 ```
 
 生成された `test/vrt/goldens/ci/*.png` はローカル確認用の一時成果物で、コミット対象にはしません。
@@ -106,16 +110,17 @@ fvm flutter run -d <device_id>
 
 ```bash
 fvm dart pub get --directory packages/vrt_preview_builder
+fvm dart run build_runner build --delete-conflicting-outputs
 fvm flutter analyze
 # packages/vrt_preview_builder で fvm dart test も実行
 fvm flutter test --exclude-tags golden
-fvm flutter test test/vrt/previews_vrt_test.dart --update-goldens
+fvm dart run tool/run_vrt.dart --update-goldens
 fvm flutter test
 ```
 
 ## CI VRT Report
 
-GitHub Actions の `vrt` workflow では、`Verify` job で生成済みVRT一覧と静的解析を確認し、PRでは `Compare screenshots` job で base branch と head branch のVRT画像を生成して差分画像を作成します。main push では `Generate screenshots` job でスクリーンショット生成が通ることを確認します。
+GitHub Actions の `vrt` workflow では、`Verify` job でVRT一覧を生成してから静的解析・テストを実行します。PRでは `Compare screenshots` job で base SHA と head SHA それぞれのソースから一覧とVRT画像を生成して差分画像を作成します。main push では `Generate screenshots` job で一覧生成と撮影が通ることを確認します。
 
 - base: PRのbase branch（通常は `main`）
 - head: PR branch
