@@ -121,5 +121,5 @@ PR の比較結果は Actions アーティファクトに保存する。
 
 ### private リポジトリでの画像表示
 
-現在の raw URL 方式では画像を表示できないため、外部ストレージへのアップロードか、GitHub CLI v2.99.0 以降の `gh pr comment --attach` を利用する。
+認証情報なしの raw URL では画像を表示できないため、外部ストレージへのアップロードか、GitHub CLI v2.99.0 以降の `gh pr comment --attach` を利用する。
 v2.99.0 の添付機能は `GITHUB_TOKEN` に未対応のため、CI では必要な権限を設定した PAT などを使用する。
